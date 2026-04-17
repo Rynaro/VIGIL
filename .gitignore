@@ -1,0 +1,14 @@
+# Generated per-project config
+.vigil/
+
+# Memory ledger (project-local, not part of the methodology)
+memories/
+
+# macOS
+.DS_Store
+
+# Editor
+.idea/
+.vscode/
+*.swp
+*.swo
