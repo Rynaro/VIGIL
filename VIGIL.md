@@ -318,4 +318,4 @@ Canary dataset: `evals/canary/` — includes deterministic regressions, heisenbu
 
 ---
 
-*VIGIL v1.0.0 — Methodology specification*
+*VIGIL v1.0.1 — Methodology specification*

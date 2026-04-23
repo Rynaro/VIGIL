@@ -1,6 +1,6 @@
 ---
 name: vigil
-version: 1.0.0
+version: 1.0.1
 methodology: VIGIL
 methodology_version: "1.0"
 description: "Forensic specialist. Post-mortem root-cause attribution for code failures, grounded in reproduction, IDG analysis, and counterfactual intervention."
@@ -94,4 +94,4 @@ VIGIL inherits team markers and adds domain-specific ones:
 
 ---
 
-*VIGIL v1.0.0 — Verify · Isolate · Graph · Intervene · Learn*
+*VIGIL v1.0.1 — Verify · Isolate · Graph · Intervene · Learn*

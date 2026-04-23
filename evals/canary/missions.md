@@ -382,4 +382,4 @@ Per mission:
 
 ---
 
-*VIGIL v1.0.0 — Canary Missions*
+*VIGIL v1.0.1 — Canary Missions*

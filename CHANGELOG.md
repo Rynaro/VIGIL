@@ -7,6 +7,24 @@ Version numbers follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ---
 
+## [Unreleased]
+
+_Nothing yet._
+
+## [1.0.1] — 2026-04-23 — EIIS-1.0 conformance
+
+### Changed
+
+- **`install.sh`** — Full EIIS-1.0 §3 interface: `--target DIR`, `--hosts LIST`, `--force`, `--dry-run`, `--non-interactive`, `--manifest-only`, `--version`, `--shared-dispatch`/`--no-shared-dispatch`, `-h/--help`. Legacy positional target preserved with deprecation warning; existing `--mode=VALUE` and `--mode VALUE` both accepted. Emits `install.manifest.json` with token budget, hosts wired, handoffs declared, security posture, and authority mode. Writes per-host dispatch files for claude-code (`.claude/agents/vigil.md`), cursor (`.cursor/rules/vigil.mdc`), and opencode (`.opencode/agents/vigil.md`). Idempotency check: non-interactive mode exits 3 on existing manifest without `--force`.
+- **Version footers** — synchronized across AGENTS.md, README.md, CLAUDE.md, VIGIL.md, DESIGN-RATIONALE.md, agent.md, all four host wirings, all four templates, and canary missions from 1.0.0 → 1.0.1.
+
+### Unchanged
+
+- FORGE cycle (Verify → Isolate → Graph → Intervene → Learn)
+- Ten architectural invariants, eleven-category failure taxonomy
+- Five phase skills, four decision templates, three JSON schemas
+- Per-project `.vigil/config.yml` generation and memory ledger bootstrap
+
 ## [1.0.0] — 2026-04-16
 
 Initial release of the VIGIL methodology — forensic debugger for code failures.
@@ -88,4 +106,4 @@ Implementations declare `methodology_version: "1.0"` in their `agent.md` frontma
 
 ---
 
-*VIGIL v1.0.0 — Initial release*
+*VIGIL v1.0.1 — Verify · Isolate · Graph · Intervene · Learn*

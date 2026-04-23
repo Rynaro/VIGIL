@@ -161,4 +161,4 @@ Claude Code: [loads agents/vigil/agent.md]
 
 ---
 
-*VIGIL v1.0.0 — Claude Code host wiring*
+*VIGIL v1.0.1 — Claude Code host wiring*

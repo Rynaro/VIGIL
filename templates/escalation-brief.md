@@ -175,7 +175,7 @@ recommended_next_action: |
 
 ## Provenance
 
-- **VIGIL version**: 1.0.0
+- **VIGIL version**: 1.0.1
 - **Generated**: [ISO-8601]
 - **Failure signature**: [VSIG-YYYYMMDD-NNN — partial entry written with confidence=L, marked as open]
 - **Flags**: [GAP | DISPUTED | FLAKE — applicable markers]
@@ -193,4 +193,4 @@ recommended_next_action: |
 
 ---
 
-*VIGIL v1.0.0 — Escalation Brief Template*
+*VIGIL v1.0.1 — Escalation Brief Template*

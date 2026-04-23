@@ -117,4 +117,4 @@ First 8 align with APIVR-Δ's Reflect taxonomy. Last 3 (`HEISENBUG`, `COMPOUND`,
 
 ---
 
-*VIGIL v1.0.0 — Verify · Isolate · Graph · Intervene · Learn*
+*VIGIL v1.0.1 — Verify · Isolate · Graph · Intervene · Learn*

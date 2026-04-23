@@ -130,7 +130,7 @@ git apply --check [path/to/this/patch.diff]   # dry run first
 
 ---
 
-*VIGIL v1.0.0 — Verified Patch Template*
+*VIGIL v1.0.1 — Verified Patch Template*
 ```
 
 ---
@@ -145,4 +145,4 @@ git apply --check [path/to/this/patch.diff]   # dry run first
 
 ---
 
-*VIGIL v1.0.0 — Verified Patch Template*
+*VIGIL v1.0.1 — Verified Patch Template*
