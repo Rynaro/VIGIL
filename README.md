@@ -221,4 +221,4 @@ Apache 2.0. See [LICENSE](LICENSE).
 
 ---
 
-*VIGIL v1.0.0 — Verify · Isolate · Graph · Intervene · Learn*
+*VIGIL v1.0.1 — Verify · Isolate · Graph · Intervene · Learn*

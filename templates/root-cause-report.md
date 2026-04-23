@@ -226,7 +226,7 @@ phase_breakdown:
 
 ## Provenance
 
-- **VIGIL version**: 1.0.0
+- **VIGIL version**: 1.0.1
 - **Methodology version**: 1.0
 - **Generated**: [ISO-8601]
 - **Failure signature ref**: [VSIG-YYYYMMDD-NNN] (memory entry)
@@ -245,4 +245,4 @@ phase_breakdown:
 
 ---
 
-*VIGIL v1.0.0 — Root-Cause Report Template*
+*VIGIL v1.0.1 — Root-Cause Report Template*

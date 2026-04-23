@@ -195,4 +195,4 @@ Time: ~4 minutes wall clock, ~18k tokens total.
 
 ---
 
-*VIGIL v1.0.0 — OpenCode host wiring*
+*VIGIL v1.0.1 — OpenCode host wiring*

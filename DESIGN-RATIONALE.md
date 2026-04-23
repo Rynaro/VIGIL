@@ -351,4 +351,4 @@ Ranked by expected impact on design:
 
 ---
 
-*VIGIL v1.0.0 — Design Rationale*
+*VIGIL v1.0.1 — Design Rationale*

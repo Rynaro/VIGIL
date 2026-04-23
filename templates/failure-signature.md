@@ -158,4 +158,4 @@ interventions_used: 2
 
 ---
 
-*VIGIL v1.0.0 — Failure Signature Template*
+*VIGIL v1.0.1 — Failure Signature Template*
