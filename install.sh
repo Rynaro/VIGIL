@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# VIGIL installer — EIIS-1.0 conformant
+# VIGIL installer — EIIS-1.1 conformant
 # Usage: bash install.sh [OPTIONS]
 set -euo pipefail
 
 EIDOLON_NAME="vigil"
-EIDOLON_VERSION="1.0.1"
+EIDOLON_VERSION="1.0.2"
 METHODOLOGY="VIGIL"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -32,7 +32,8 @@ the current consumer project.
 
 Options:
   --target DIR            Target install dir (default: ${TARGET})
-  --hosts LIST            claude-code,copilot,cursor,opencode,all (default: auto)
+  --hosts LIST            claude-code,copilot,cursor,opencode,codex,all,auto,none
+                          (default: auto)
   --mode MODE             Authority mode: read-only|sandbox|write (default: ${MODE})
   --shared-dispatch       Compose marker-bounded section in root AGENTS.md /
                           CLAUDE.md / .github/copilot-instructions.md (opt-in).
@@ -49,6 +50,7 @@ Host detection (--hosts auto):
   copilot       detected if .github/ exists
   cursor        detected if .cursor/ or .cursorrules exists
   opencode      detected if .opencode/ exists
+  codex         detected if .codex/ exists, or AGENTS.md without .github/.codex/
 
 Authority modes (--mode):
   read-only     Interventions simulated only; no sandbox execution (safest default)
@@ -146,6 +148,12 @@ detect_hosts() {
   [[ -d ".github" ]]                          && detected+=("copilot")
   [[ -d ".cursor" || -f ".cursorrules" ]]     && detected+=("cursor")
   [[ -d ".opencode" ]]                        && detected+=("opencode")
+  # Codex (EIIS v1.1 §4.5): .codex/ is the definitive Codex-only signal;
+  # AGENTS.md alone (without .github/) also indicates Codex.
+  [[ -d ".codex" ]]                           && detected+=("codex")
+  if [[ -f "AGENTS.md" && ! -d ".github" && ! -d ".codex" ]]; then
+    detected+=("codex")
+  fi
   printf "%s\n" "${detected[@]:-}"
 }
 
@@ -159,12 +167,22 @@ if [[ "$HOSTS" == "auto" ]]; then
     HOSTS_ARRAY=("raw")
   fi
 elif [[ "$HOSTS" == "all" ]]; then
-  HOSTS_ARRAY=("claude-code" "copilot" "cursor" "opencode")
+  HOSTS_ARRAY=("claude-code" "copilot" "cursor" "opencode" "codex")
+elif [[ "$HOSTS" == "none" ]]; then
+  HOSTS_ARRAY=()
 else
   IFS=',' read -ra HOSTS_ARRAY <<< "$HOSTS"
 fi
 
-hosts_include() { local h; for h in "${HOSTS_ARRAY[@]}"; do [[ "$h" == "$1" ]] && return 0; done; return 1; }
+# Validate per EIIS v1.1 §2.1 host enum.
+for _h in "${HOSTS_ARRAY[@]:-}"; do
+  case "$_h" in
+    claude-code|copilot|cursor|opencode|codex|raw|"") : ;;
+    *) echo "Invalid --hosts value: $_h" >&2; exit 2 ;;
+  esac
+done
+
+hosts_include() { local h; for h in "${HOSTS_ARRAY[@]:-}"; do [[ "$h" == "$1" ]] && return 0; done; return 1; }
 
 # --------------------------------------------------------------------------- #
 # Idempotency check
@@ -333,6 +351,13 @@ if [[ "$MANIFEST_ONLY" != "true" && "$SHARED_DISPATCH" == "true" ]]; then
   upsert_eidolon_block "AGENTS.md" "$SHARED_BLOCK" "dispatch"
 fi
 
+# EIIS v1.1 §4.1.0 — root AGENTS.md is co-owned by `copilot` and `codex`.
+# When `codex` is wired, write the marker block into root AGENTS.md
+# regardless of --shared-dispatch (Codex's primary instruction surface).
+if [[ "$MANIFEST_ONLY" != "true" && "$SHARED_DISPATCH" != "true" ]] && hosts_include "codex"; then
+  upsert_eidolon_block "AGENTS.md" "$SHARED_BLOCK" "dispatch"
+fi
+
 # --------------------------------------------------------------------------- #
 # Host wiring
 # --------------------------------------------------------------------------- #
@@ -438,6 +463,48 @@ EOF
   fi
 fi
 
+# ---- codex (EIIS v1.1 §4.5) ---------------------------------------------- #
+# Per §4.5.1: write exactly one Markdown file at .codex/agents/<name>.md.
+# Per §4.5.2: required frontmatter `name` (slug) + `description`; optional
+# `tools` and `model`. Source: https://developers.openai.com/codex/subagents
+if hosts_include "codex" && [[ "$MANIFEST_ONLY" != "true" ]]; then
+  log "Wiring: codex"
+  do_action "mkdir -p .codex/agents" mkdir -p ".codex/agents"
+  CODEX_AGENT=".codex/agents/vigil.md"
+  CODEX_CONTENT="---
+name: vigil
+description: Forensic debugger for code failures resistant to normal repair. Use when a test fails in a non-obvious way, when APIVR-Δ has exhausted its Reflect loop, for heisenbugs, compound failures, or regressions of unclear origin. Runs the five-phase VIGIL pipeline (Verify → Isolate → Graph → Intervene → Learn), emits evidence-anchored root-cause attribution.
+---
+
+# VIGIL — Forensic Debugger Codex subagent
+
+You execute the VIGIL methodology: **V**erify → **I**solate → **G**raph →
+**I**ntervene → **L**earn. You attribute root causes under evidence
+discipline. You do NOT plan, implement, or chronicle — you decide what
+went wrong.
+
+When Codex delegates to this subagent, treat the methodology described
+in \`${TARGET}/agent.md\` as authoritative. The full ruleset lives in
+\`${TARGET}/AGENTS.md\` and the canonical specification in
+\`${TARGET}/VIGIL.md\`. Phase skills under
+\`${TARGET}/skills/<phase>/SKILL.md\` load per phase.
+
+Authority: **${MODE}**. See \`${TARGET}/agent.md\` for P0 invariants
+and phase-skill triggers."
+
+  if [[ ! -f "$CODEX_AGENT" || "$FORCE" == "true" ]]; then
+    if [[ "$DRY_RUN" == "true" ]]; then
+      echo "  [dry-run] write ${CODEX_AGENT}"
+    else
+      printf "%s\n" "$CODEX_CONTENT" > "$CODEX_AGENT"
+      chk=$(sha256_file "$CODEX_AGENT")
+      FILES_WRITTEN+=("{\"path\":\"${CODEX_AGENT}\",\"sha256\":\"${chk}\",\"role\":\"dispatch\",\"mode\":\"created\"}")
+    fi
+  else
+    log "  skip ${CODEX_AGENT} (exists — pass --force to overwrite)"
+  fi
+fi
+
 # --------------------------------------------------------------------------- #
 # Per-project config and memory ledger (VIGIL-specific)
 # --------------------------------------------------------------------------- #
@@ -449,7 +516,7 @@ if [[ "$MANIFEST_ONLY" != "true" && ! -d "$CONFIG_DIR" ]]; then
     mkdir -p "$CONFIG_DIR"
     cat > "$CONFIG_DIR/config.yml" <<EOF
 # VIGIL per-project configuration
-# Generated by installer on $(date -u +%Y-%m-%dT%H:%M:%SZ)
+# Generated by installer (VIGIL v${EIDOLON_VERSION}).
 
 authority:
   default_mode: $MODE
