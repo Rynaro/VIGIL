@@ -11,6 +11,44 @@ Version numbers follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 _Nothing yet._
 
+## [1.0.2] — 2026-04-24 — EIIS-1.1 conformance + OpenAI Codex host
+
+### Added
+
+- **`EIIS_VERSION`** — root single-line file declaring `1.1`. Resolves drift
+  D-6 (universal) and unlocks v1.1 features in the conformance checker.
+- **`schemas/install.manifest.v1.json`** — verbatim vendored copy of the
+  EIIS v1.1 manifest schema, kept in sync with future EIIS bumps so the
+  installer-emitted manifest can be self-validated locally without
+  network access (EIIS v1.1 §1.5).
+- **OpenAI Codex host (`codex`)** — `install.sh` now accepts `--hosts codex`
+  (and includes it in `--hosts all`), auto-detects `.codex/` or
+  `AGENTS.md`-without-`.github/` consumer projects, writes
+  `.codex/agents/vigil.md` with the EIIS v1.1 §4.5 frontmatter contract
+  (`name: vigil`, `description:` describing VIGIL's role), and owns a
+  marker-bounded block in root `AGENTS.md` whenever `codex` is wired
+  (EIIS v1.1 §4.1.0 — co-owned by `copilot` and `codex`). The Codex body
+  mirrors the existing Claude agent prompt and points at
+  `${TARGET}/agent.md` as the canonical methodology entry.
+- **`examples/install.manifest.json`** — sample manifest fixture so the
+  EIIS conformance checker can structurally validate the emitted manifest
+  shape (gates M1–M14).
+
+### Changed
+
+- **`install.sh`** — host list now validates entries up-front and rejects
+  unknowns with exit 2; `--hosts none` is honoured explicitly. The
+  generated `.vigil/config.yml` no longer embeds an installer timestamp,
+  keeping `installed_at` as the only non-deterministic field
+  (EIIS §3.5 / conformance gate I3).
+- **Version footers** synchronised across the repo from `1.0.1` → `1.0.2`
+  via the manifest emitter.
+
+### Conformance
+
+- `bash conformance/check.sh` (eidolons-eiis): `exit 3` (SHOULD-fail
+  on the missing vendored schema) → `exit 0` after this release.
+
 ## [1.0.1] — 2026-04-23 — EIIS-1.0 conformance
 
 ### Changed
@@ -106,4 +144,4 @@ Implementations declare `methodology_version: "1.0"` in their `agent.md` frontma
 
 ---
 
-*VIGIL v1.0.1 — Verify · Isolate · Graph · Intervene · Learn*
+*VIGIL v1.0.2 — Verify · Isolate · Graph · Intervene · Learn*
