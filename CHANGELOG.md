@@ -7,6 +7,14 @@ Version numbers follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ---
 
+## [1.0.3] - 2026-04-26 — Re-release v1.0.2 + manifest cleanup
+
+### Fixed
+- The previously-published `v1.0.2` tag pointed at the **pre-codex commit** by mistake. v1.0.3 is the same intended release re-cut at the correct `HEAD` (`bea134c`); v1.0.2 stays frozen but is effectively superseded.
+- `install.sh` manifest emission no longer writes the non-EIIS `authority_mode` field (rejected by EIIS v1.1's `additionalProperties: false`); VIGIL's read-only stance is captured in `security.writes_repo` already.
+- `install.sh` shared-dispatch helper now emits `mode: "overwritten"` instead of `mode: "rewritten"` to match the EIIS v1.1 enum (`created`, `appended`, `overwritten`).
+- `examples/install.manifest.json` regenerated to reflect both manifest fixes; now passes `python -m jsonschema` against the vendored EIIS v1.1 schema.
+
 ## [Unreleased]
 
 _Nothing yet._

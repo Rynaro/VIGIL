@@ -4,7 +4,7 @@
 set -euo pipefail
 
 EIDOLON_NAME="vigil"
-EIDOLON_VERSION="1.0.2"
+EIDOLON_VERSION="1.0.3"
 METHODOLOGY="VIGIL"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -307,7 +307,7 @@ upsert_eidolon_block() {
   printf '%s\n' "$content" > "$content_file"
 
   if [[ -f "$dst" ]] && grep -qF "$start" "$dst" 2>/dev/null; then
-    mode="rewritten"
+    mode="overwritten"
     tmp="$(mktemp)"
     awk -v start="$start" -v end="$end" -v cf="$content_file" '
       BEGIN { in_block = 0 }
@@ -617,8 +617,7 @@ if [[ "$DRY_RUN" != "true" ]]; then
     "reads_network": false,
     "writes_repo": $([ "$MODE" = "write" ] && echo "true" || echo "false"),
     "persists": [".vigil/config.yml", "memories/vigil-failures.yaml"]
-  },
-  "authority_mode": "${MODE}"
+  }
 }
 MANIFEST_EOF
   log "Manifest: ${MANIFEST_PATH}"
