@@ -17,7 +17,20 @@ Version numbers follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ## [Unreleased]
 
-_Nothing yet._
+### Added
+
+- **Release-integrity adoption.** `.github/workflows/release.yml` wraps
+  the eidolons-nexus `eidolon-release-template.yml` (post-merge of
+  `Rynaro/eidolons` PR #24) so a maintainer-triggered `workflow_dispatch`
+  on this repo produces a tagged GitHub release with `release-manifest.json`
+  (commit + tree + `archive_sha256`), `SHA256SUMS`, and a GitHub artifact
+  attestation. Roster Intake on the nexus side consumes this metadata to
+  populate `roster/index.yaml` `versions.releases.<v>`. Provenance is
+  GitHub-attestation-based (sigstore-backed); no GPG keys, no per-Eidolon
+  secrets. `manifest_sha256` is published as `null` for now because no
+  `install.manifest.json` is committed at repo root; a follow-up may
+  address `install.sh` determinism (target-path embedding in dispatch
+  files) so a stable repo-root manifest can be committed.
 
 ## [1.0.2] — 2026-04-24 — EIIS-1.1 conformance + OpenAI Codex host
 
