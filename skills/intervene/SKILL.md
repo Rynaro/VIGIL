@@ -240,4 +240,12 @@ budget:
 
 ---
 
+## ECL Escalation-Brief Envelope
+
+On budget exhaustion (5 interventions, no FLIPPED result), the escalation-brief payload is wrapped per `templates/escalation-brief.envelope.json` with `performative: "ESCALATE"` and `to.eidolon: "forge"`. The `assumptions[]` array MUST include `"trigger: budget-exhausted-no-flip"` (ECL §2.2.3). The `edge_origin` is `"roster"` — the `vigil → forge` lateral edge is declared in `roster/index.yaml`.
+
+See `skills/learn/SKILL.md` § Envelope Emission for the full envelope construction procedure (SHA-256 computation, trace-event append, `thread_id` resolution).
+
+---
+
 *VIGIL Phase I (Intervene) — 5 counterfactuals, minimal each, falsification-optimal*

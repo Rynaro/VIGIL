@@ -7,6 +7,43 @@ Version numbers follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ---
 
+## [1.1.0] — 2026-05-10 — ECL v1.0 adoption
+
+### Added
+
+- **`ECL_VERSION`** — root single-line file declaring `1.0`. Read by nexus during `eidolons sync` to warn on ECL spec mismatches (ECL §7.2).
+- **`schemas/ecl/envelope.v1.json`** — vendored copy of `eidolons-ecl/schemas/envelope.v1.json` with the 10-value `performative` enum inlined (no `$ref` resolver required; `jq empty` validates standalone). Source: ECL v1.0 (2026-05-08).
+- **`schemas/ecl/_base-profile.v1.json`** — vendored base profile for downstream compose checks.
+- **`schemas/ecl/root-cause-report.v1.json`** — vendored copy of `eidolons-ecl/schemas/per-eidolon/root-cause-report.v1.json` with base-profile constraints inlined. Strict subset of local `schemas/root-cause-report.v1.json`, mirroring VIGIL P0 invariants (`reproduction_runs >= 2`, `hypotheses_count >= 3`, `interventions_count <= 5`, `blame_target` present).
+- **`schemas/ecl/contracts/vigil-to-apivr.yaml`** — vendored outbound contract.
+- **`schemas/ecl/contracts/vigil-to-spectra.yaml`** — vendored outbound contract.
+- **`schemas/ecl/contracts/vigil-to-idg.yaml`** — vendored outbound contract.
+- **`schemas/ecl/contracts/apivr-to-vigil.yaml`** — vendored inbound contract; consumed by Phase V verify gate.
+- **`templates/root-cause-report.envelope.json`** — skeleton envelope sidecar for Phase L emission (root-cause-report to any recipient).
+- **`templates/escalation-brief.envelope.json`** — skeleton envelope sidecar for FORGE escalation path (performative `ESCALATE`).
+
+### Changed
+
+- **`agent.md`** — version `1.0.1 → 1.1.0`; added `comm:` frontmatter block declaring `envelope_version: "1.0"`, `emits: [root-cause-report, escalation-brief]`, `consumes: [repair-failed-report]`.
+- **`VIGIL.md`** — added I-11 invariant; extended §2.1 (Phase V) with inbound-verify step on escalation entry; extended §2.5 (Phase L) with envelope-emit step; added §10 ECL compatibility note.
+- **`AGENTS.md`** — new section "## ECL Emission Contract" between "## Schema Validation" and "## Structural Markers"; five-line emit invariant + pointers to `schemas/ecl/` and `templates/*.envelope.json`.
+- **`skills/learn/SKILL.md`** — new subsection "## Envelope Emission" after "Handoff Directive"; SHA-256 computation, UUIDv7 generation, fan-out procedure, `.envelope.<recipient>.json` suffix convention, trust-level mapping, trace-event append.
+- **`skills/verify/SKILL.md`** — new subsection "## Inbound Envelope Verification (Escalation Entry)" at the top; verify-before-process: schema, contract match, integrity check, trace append, halt-on-fail.
+- **`skills/intervene/SKILL.md`** — added reference at bottom for escalation-brief envelope construction.
+- **`templates/root-cause-report.md`** — added top-of-file ECL v1.0 note.
+- **`DESIGN-RATIONALE.md`** — new section "## ECL v1.0 Adoption Rationale" documenting D1, D3, D4, D6.
+- **`install.sh`** — bumped `EIDOLON_VERSION` `1.0.3 → 1.1.0`; added `ECL_VERSION` to source sanity check; added `schemas/ecl/` mkdir; added `ECL_VERSION`, ECL JSON schemas, ECL contract YAML files, and two `.envelope.json` templates to copy loops; added `comm.envelope_version: "1.0"` to manifest (additive).
+- **`CLAUDE.md`** — version footer `1.0.1 → 1.1.0`.
+
+### Deferred
+
+- **`hmac-sha256` integrity method** — `trust_level: high` edges use `sha256` in v1.1.0. Promotion deferred to ECL v1.1 GA + nexus `ECL_HMAC_KEY` distribution mechanism (D1).
+- **`vigil-to-forge.yaml` upstream contract** — FORGE lateral edge uses `edge_origin: "roster"` with no vendored contract (follow-up PR to `eidolons-ecl` as F2).
+
+### Fan-out filename convention
+
+Fan-out envelopes use `<basename>.envelope.<recipient>.json` (e.g. `…envelope.spectra.json`, `…envelope.idg.json`). Chosen for human-readability per Q2 resolution.
+
 ## [1.0.3] - 2026-04-26 — Re-release v1.0.2 + manifest cleanup
 
 ### Fixed
@@ -165,4 +202,4 @@ Implementations declare `methodology_version: "1.0"` in their `agent.md` frontma
 
 ---
 
-*VIGIL v1.0.2 — Verify · Isolate · Graph · Intervene · Learn*
+*VIGIL v1.1.0 — Verify · Isolate · Graph · Intervene · Learn*

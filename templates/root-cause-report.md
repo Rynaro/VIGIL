@@ -1,5 +1,7 @@
 # Root-Cause Report Template
 
+> **ECL v1.0 note:** When emitted via VIGIL v1.1+, this payload is accompanied by `<basename>.envelope.json` (or `<basename>.envelope.<recipient>.json` for fan-out) per ECL v1.0. Body shape unchanged — the envelope wraps but does not redefine. See `skills/learn/SKILL.md` § Envelope Emission for the sidecar construction procedure.
+
 The primary deliverable of a VIGIL mission. Fill each section with evidence-anchored content. Schema-validated at emission.
 
 ---

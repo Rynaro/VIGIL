@@ -4,7 +4,7 @@
 set -euo pipefail
 
 EIDOLON_NAME="vigil"
-EIDOLON_VERSION="1.0.3"
+EIDOLON_VERSION="1.1.0"
 METHODOLOGY="VIGIL"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -139,6 +139,11 @@ if [[ ! -f "${SCRIPT_DIR}/VIGIL.md" ]]; then
   exit 3
 fi
 
+if [[ ! -f "${SCRIPT_DIR}/ECL_VERSION" ]]; then
+  echo "ERROR: ECL_VERSION not found in VIGIL source directory" >&2
+  exit 3
+fi
+
 # --------------------------------------------------------------------------- #
 # Host detection
 # --------------------------------------------------------------------------- #
@@ -225,6 +230,8 @@ if [[ "$MANIFEST_ONLY" != "true" ]]; then
   maybe_mkdir "${TARGET}/skills/learn"
   maybe_mkdir "${TARGET}/templates"
   maybe_mkdir "${TARGET}/schemas"
+  maybe_mkdir "${TARGET}/schemas/ecl"
+  maybe_mkdir "${TARGET}/schemas/ecl/contracts"
   maybe_mkdir "${TARGET}/hosts"
   maybe_mkdir "${TARGET}/evals/canary"
 fi
@@ -249,6 +256,7 @@ if [[ "$MANIFEST_ONLY" != "true" ]]; then
   copy_file "DESIGN-RATIONALE.md" "${TARGET}/DESIGN-RATIONALE.md" "other"
   copy_file "README.md"           "${TARGET}/README.md"           "other"
   copy_file "CHANGELOG.md"        "${TARGET}/CHANGELOG.md"        "other"
+  copy_file "ECL_VERSION"         "${TARGET}/ECL_VERSION"         "other"
 
   for phase in verify isolate graph intervene learn; do
     copy_file "skills/${phase}/SKILL.md" "${TARGET}/skills/${phase}/SKILL.md" "skill"
@@ -258,8 +266,20 @@ if [[ "$MANIFEST_ONLY" != "true" ]]; then
     copy_file "templates/${tpl}.md" "${TARGET}/templates/${tpl}.md" "template"
   done
 
+  for tpl_env in root-cause-report escalation-brief; do
+    copy_file "templates/${tpl_env}.envelope.json" "${TARGET}/templates/${tpl_env}.envelope.json" "template"
+  done
+
   for schema in reproduction intervention-log root-cause-report; do
     copy_file "schemas/${schema}.v1.json" "${TARGET}/schemas/${schema}.v1.json" "other"
+  done
+
+  for ecl_schema in envelope.v1 _base-profile.v1 root-cause-report.v1; do
+    copy_file "schemas/ecl/${ecl_schema}.json" "${TARGET}/schemas/ecl/${ecl_schema}.json" "other"
+  done
+
+  for ecl_contract in vigil-to-apivr vigil-to-spectra vigil-to-idg apivr-to-vigil; do
+    copy_file "schemas/ecl/contracts/${ecl_contract}.yaml" "${TARGET}/schemas/ecl/contracts/${ecl_contract}.yaml" "other"
   done
 
   for host in claude-code cursor copilot opencode; do
@@ -617,6 +637,11 @@ if [[ "$DRY_RUN" != "true" ]]; then
     "reads_network": false,
     "writes_repo": $([ "$MODE" = "write" ] && echo "true" || echo "false"),
     "persists": [".vigil/config.yml", "memories/vigil-failures.yaml"]
+  },
+  "comm": {
+    "envelope_version": "1.0",
+    "emits": ["root-cause-report", "escalation-brief"],
+    "consumes": ["repair-failed-report"]
   }
 }
 MANIFEST_EOF

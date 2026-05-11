@@ -222,6 +222,61 @@ IDG is always invoked *in parallel* for high-severity failures (user-facing inci
 
 ---
 
+## Envelope Emission
+
+After the handoff directive is written, emit the ECL v1.0 envelope sidecar(s) per I-11 and ECL §1. This step is mandatory for VIGIL v1.1.0 on all inter-Eidolon hand-offs.
+
+### Step 1 — Compute payload SHA-256
+
+```
+sha256sum root-cause-report-<mission-id>.md | awk '{print $1}'
+# macOS: shasum -a 256 root-cause-report-<mission-id>.md | awk '{print $1}'
+```
+
+Record the hex digest (64 lowercase hex characters).
+
+### Step 2 — Generate message_id and resolve thread_id
+
+- Generate a UUIDv7 (or UUIDv4) as the `message_id` for this envelope.
+- `thread_id`: reuse the inbound envelope's `thread_id` if this mission was entered via escalation (APIVR-Δ → VIGIL) — the thread_id carries through the escalation chain. Generate a new UUID on first emit for consultant or post-hoc missions.
+- `parent_id`: set to the inbound envelope's `message_id` on escalation entry; `null` on consultant/post-hoc first emit.
+
+### Step 3 — Fan-out: one envelope per recipient
+
+When the handoff routes to multiple recipients (e.g. SPEC_DEFECT → SPECTRA + IDG in parallel):
+
+1. Write the payload `root-cause-report-<mission-id>.md` **once**.
+2. For each recipient, write a **separate** envelope file:
+   - `root-cause-report-<mission-id>.envelope.apivr.json`
+   - `root-cause-report-<mission-id>.envelope.spectra.json`
+   - `root-cause-report-<mission-id>.envelope.idg.json`
+3. Each envelope has a **distinct** `message_id`; all share the same `thread_id` and `parent_id`.
+4. `artifact.sha256` and `artifact.size_bytes` are identical across all envelopes (same payload bytes).
+5. `constraints.trust_level` MUST differ by contract:
+   - `vigil-to-apivr`: `"high"`
+   - `vigil-to-spectra`: `"high"`
+   - `vigil-to-idg`: `"standard"`
+
+Fill all fields from `templates/root-cause-report.envelope.json`. The `objective` field MUST be ≤240 characters. The `context_delta.summary` MUST be ≤200 tokens (heuristic: ≤800 chars using `chars/4`). If `tokens_used > 4000`, warn (do not abort).
+
+### Step 4 — Append emit trace events
+
+For each envelope written, append one JSONL line to `.eidolons/.trace/<thread_id>.jsonl` **relative to the consumer project root** (not the VIGIL install target). Create the `.eidolons/.trace/` directory if absent.
+
+```jsonl
+{"ts":"<RFC3339>","event":"emit","message_id":"<uuid>","thread_id":"<uuid>","from":"vigil@1.1.0","to":"<recipient>@<version>","performative":"PROPOSE","integrity_method":"sha256","context_tokens":<int>,"model":"<host model>","tier":"standard"}
+```
+
+### Step 5 — Escalation-brief envelope (budget exhausted)
+
+On budget exhaustion (5 interventions, no FLIPPED result), the escalation-brief sidecar uses `templates/escalation-brief.envelope.json`:
+- `performative`: `"ESCALATE"`
+- `to.eidolon`: `"forge"` (lateral consult per roster `vigil.handoffs.lateral`)
+- `edge_origin`: `"roster"` (the `vigil → forge` edge is declared in `roster/index.yaml`)
+- `assumptions[]` MUST include `"trigger: budget-exhausted-no-flip"` (ECL §2.2.3)
+
+Trace the emit event to `.eidolons/.trace/<thread_id>.jsonl` as above, with `performative: "ESCALATE"`.
+
 ## Authority-Specific Output Rules
 
 | Authority | What VIGIL emits |
@@ -244,4 +299,4 @@ Write authority does NOT grant VIGIL permission to auto-apply patches. Applicati
 
 ---
 
-*VIGIL Phase L — attribute, patch if authorized, preserve the lesson*
+*VIGIL Phase L — attribute, patch if authorized, preserve the lesson, emit ECL envelope*

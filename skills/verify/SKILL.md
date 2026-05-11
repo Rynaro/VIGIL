@@ -25,6 +25,64 @@ phase: V
 
 ---
 
+## Inbound Envelope Verification (Escalation Entry)
+
+When VIGIL is invoked on the **escalation entry** mode (APIVR-Δ → VIGIL), run this verification BEFORE the deterministic-first protocol below. This implements ECL §6.2.2 and VIGIL I-11.
+
+### Trigger
+
+If the upstream artifact path `P` has a sibling `${P%.*}.envelope.json`, verification is mandatory. If no sidecar exists (non-ECL APIVR-Δ caller), skip this section and proceed to Step 1 below.
+
+### Step V-E1 — Schema shape
+
+Validate the envelope JSON against `schemas/ecl/envelope.v1.json`.
+
+Check that the envelope parses as valid JSON and all required fields are present: `envelope_version`, `message_id`, `thread_id`, `parent_id`, `from`, `to`, `performative`, `objective`, `artifact`, `integrity`, `trace`. On failure: failure code `SCHEMA_INVALID`.
+
+### Step V-E2 — Contract match
+
+Cross-check fields against `schemas/ecl/contracts/apivr-to-vigil.yaml`:
+
+- `from.eidolon` MUST equal `"apivr"` and `to.eidolon` MUST equal `"vigil"`. On failure: `UNDECLARED_EDGE`.
+- `performative` MUST be one of `ESCALATE`, `REQUEST`, `ACKNOWLEDGE`. On failure: `PERFORMATIVE_NOT_ALLOWED`.
+- `artifact.kind` MUST equal `"repair-failed-report"`. On failure: `ARTIFACT_KIND_NOT_ALLOWED`.
+
+### Step V-E3 — Integrity check
+
+Recompute the SHA-256 digest of the payload file bytes and compare against `envelope.integrity.value`:
+
+```sh
+computed=$(shasum -a 256 "$payload_path" | awk '{print $1}')
+declared=$(grep -o '"value":"[^"]*"' "$envelope_path" | head -1 | cut -d'"' -f4)
+# [ "$computed" = "$declared" ] || failure code: INTEGRITY_MISMATCH
+```
+
+### Step V-E4 — Trace event
+
+Append one JSONL line to `.eidolons/.trace/<thread_id>.jsonl` (relative to consumer project root; create directory if absent):
+
+**On success:**
+```jsonl
+{"ts":"<RFC3339>","event":"verify_pass","message_id":"<uuid>","thread_id":"<uuid>","from":"apivr@<version>","to":"vigil@1.1.0","performative":"<performative>","integrity_method":"sha256"}
+```
+
+**On failure:**
+```jsonl
+{"ts":"<RFC3339>","event":"verify_fail","message_id":"<uuid>","thread_id":"<uuid>","from":"apivr@<version>","to":"vigil@1.1.0","performative":"<performative>","integrity_method":"sha256","verify_failure_code":"<CODE>"}
+```
+
+If the envelope is invalid JSON, use `thread_id: "unknown"` and `message_id: "unknown"` as fallback values.
+
+### Step V-E5 — On verify_fail: halt
+
+On any verification failure:
+
+1. Emit a `[GAP]` finding: `[GAP] Inbound envelope verification failed: <FAILURE_CODE>. The upstream repair-failed-report.envelope.json did not pass ECL §6.2.2 verification. Mission halted.`
+2. Halt the mission — do NOT proceed to the deterministic-first protocol.
+3. Route to human (or back to APIVR-Δ if the failure is `INTEGRITY_MISMATCH` — the report may have been tampered or corrupted in transit).
+
+---
+
 ## The Deterministic-First Protocol
 
 ### Step 1 — Normalize the failure signature
