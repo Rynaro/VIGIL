@@ -312,6 +312,48 @@ The handoff recipient is determined by the `originating_decision.classification`
 
 ---
 
+## ECL v1.0 Adoption Rationale
+
+> **Spec:** `/Users/henrique/workspace/oss/agents/eidolons/.spectra/vigil-ecl-adoption.md` (SPECTRA v4.2.11, generated 2026-05-08, status: READY FOR APIVR-Δ)
+
+VIGIL v1.1.0 adopts ECL v1.0. Four decisions govern the adoption shape:
+
+### D1 — Integrity method: sha256 (hmac-sha256 deferred)
+
+ECL §6.3 RECOMMENDS `hmac-sha256` for `trust_level: high` edges (which both `vigil-to-apivr` and `vigil-to-spectra` carry). VIGIL v1.1.0 uses `sha256` only.
+
+**Rationale.** No `ECL_HMAC_KEY` distribution mechanism exists in the nexus today. Introducing HMAC without a key-distribution contract would produce an unusable gate (no key → verify_fail on every receive). The sha256 choice is forwards-compatible: VIGIL v1.2 can promote to `hmac-sha256` without a SemVer break in either VIGIL or ECL.
+
+**Precedent.** APIVR-Δ v3.1.0 ECL adoption made the same decision for the same reason.
+
+**Future.** ECL v1.1 GA + nexus `ECL_HMAC_KEY` distribution unlock promotion. Tracked as F3 in the spec follow-ups.
+
+### D3 — Schema vendoring: vendor-inlined-enum
+
+ECL schemas are vendored at `schemas/ecl/` (envelope, base profile, root-cause-report profile). The `performative` enum from ECL §2.1 is **inlined** inside `schemas/ecl/envelope.v1.json` at both `properties.performative` and `properties.expected_response.properties.performative`.
+
+**Rationale.** The gate command `jq empty schemas/ecl/*.json` (G0) must pass without a `$ref` resolver. Inlining makes the vendored set self-contained. The upstream source (`eidolons-ecl/schemas/envelope.v1.json`) uses a `$ref` to a sibling `performative.v1.json`; the vendored copy inlines that reference instead.
+
+**Drift management.** `ECL_VERSION` declares the targeted spec version. On every ECL minor, diff `schemas/ecl/envelope.v1.json` against upstream (modulo the inlined enum) and bump VIGIL accordingly.
+
+### D4 — Fan-out: one payload, N envelopes
+
+When a finding routes to multiple recipients (e.g. SPEC_DEFECT → SPECTRA + IDG), VIGIL writes the payload `root-cause-report.md` **once** and writes **one envelope per recipient** with distinct `message_id` values but shared `thread_id` and `parent_id`.
+
+**Rationale.** ECL §1.1.3 mandates that `to.eidolon` identifies a single recipient. There is no multicast performative in ECL v1.0. Fan-out via distinct envelopes satisfies the spec while allowing one-payload-many-recipients without duplicating payload bytes.
+
+**Filename convention.** Fan-out envelopes use the suffix `<basename>.envelope.<recipient>.json` (e.g. `root-cause-report-20260510-001.envelope.spectra.json`) — chosen for human-readability since the recipient set is small (≤4). Documented in CHANGELOG.
+
+### D6 — Receiver-side verification: verify-before-process
+
+On escalation entry (APIVR-Δ → VIGIL), Phase V verifies the inbound `repair-failed-report.envelope.json` BEFORE processing the payload. A `verify_fail` halts the mission with a `[GAP]` finding referencing the ECL §5.3 failure code.
+
+**Rationale.** ECL §6.2.2 says receivers SHALL recompute integrity before acting on the payload. VIGIL is the highest-trust artefact in the system — it would be contradictory for VIGIL to emit high-trust findings while itself accepting unverified payloads. The verify-before-process stance is the only consistent choice.
+
+**Note on opt-in posture.** APIVR-Δ v3.1.0 adopted a warn-only (never-refuse) posture for its verify-incoming skill, citing ECL §0 (opt-in). VIGIL takes the stricter MUST-halt stance on verify_fail because: (a) VIGIL operates on forensic evidence where payload tampering is a meaningful threat; (b) the spec explicitly calls this out as the highest-trust edge in the system. This is a deliberate divergence from APIVR-Δ's pattern.
+
+---
+
 ## Research Foundation (Citation Map)
 
 | Decision | Primary research basis | Supporting evidence |
@@ -351,4 +393,4 @@ Ranked by expected impact on design:
 
 ---
 
-*VIGIL v1.0.1 — Design Rationale*
+*VIGIL v1.1.0 — Design Rationale*

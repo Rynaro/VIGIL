@@ -82,6 +82,20 @@ All structured artifacts validate against schemas in `schemas/`:
 - `intervention-log.v1.json` — Phase Intervene output (enforces ≥3 hypotheses, ≤5 interventions)
 - `root-cause-report.v1.json` — Phase L primary output (rejects L-confidence, enforces SPEC_DEFECT→SPECTRA routing)
 
+## ECL Emission Contract
+
+VIGIL v1.1.0 emits ECL v1.0 envelopes on all inter-Eidolon handoffs. The five-line emit invariant:
+
+1. **Compute SHA-256** of the payload bytes (`root-cause-report.md` or `escalation-brief.md`).
+2. **Write the envelope sidecar** (`<basename>.envelope.json` or `<basename>.envelope.<recipient>.json` for fan-out) per `templates/root-cause-report.envelope.json` or `templates/escalation-brief.envelope.json`.
+3. **Verify inbound envelopes** — on escalation entry (APIVR-Δ → VIGIL), read the inbound `repair-failed-report.envelope.json` and validate it against `schemas/ecl/envelope.v1.json` and `schemas/ecl/contracts/apivr-to-vigil.yaml` before processing the payload.
+4. **Fan-out** — when routing to multiple recipients (e.g. SPECTRA + IDG for SPEC_DEFECT), write the payload once and emit one envelope per recipient with distinct `message_id` values but shared `thread_id` and `parent_id`.
+5. **Append trace events** — one `emit` event per outbound envelope, one `verify_pass` or `verify_fail` per inbound envelope, to `.eidolons/.trace/<thread_id>.jsonl` (relative to consumer project root per ECL §5.1.1).
+
+Vendored ECL schemas: `schemas/ecl/` — envelope schema, per-Eidolon profile, and all four contracts (`vigil-to-apivr`, `vigil-to-spectra`, `vigil-to-idg`, `apivr-to-vigil`).
+
+ECL version targeted: see `ECL_VERSION` (declares `1.0`).
+
 ## Structural Markers
 
 - `[FINDING-NNN]` — evidence-anchored attribution (team-wide convention)
@@ -117,4 +131,4 @@ First 8 align with APIVR-Δ's Reflect taxonomy. Last 3 (`HEISENBUG`, `COMPOUND`,
 
 ---
 
-*VIGIL v1.0.1 — Verify · Isolate · Graph · Intervene · Learn*
+*VIGIL v1.1.0 — Verify · Isolate · Graph · Intervene · Learn*

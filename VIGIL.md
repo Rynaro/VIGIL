@@ -25,6 +25,7 @@ Every VIGIL implementation enforces these, mechanically where possible:
 | I-8 | **Non-determinism declared, not masked** | Deterministic-first; two failures → statistical mode with confidence bands; `[FLAKE]` marker mandatory |
 | I-9 | **Sandbox adapter interface** | VIGIL does not implement sandboxing; it uses whatever adapter the harness provides (Docker, language-native, bubblewrap, etc.) |
 | I-10 | **Telemetry-driven compaction** | ≥60% context → async fold; ≥85% → halt and checkpoint |
+| I-11 | **ECL envelope emission gates downstream hand-off** | Every artefact handed to APIVR-Δ, SPECTRA, IDG, or FORGE MUST be accompanied by an `*.envelope.json` sidecar conforming to `schemas/ecl/envelope.v1.json`. Inbound envelopes from APIVR-Δ MUST be verified before the payload is processed (Phase V escalation entry). |
 
 **Why mechanical.** Model-level instructions alone drift under long-horizon pressure. The research literature converges on this across GraphTracer (arXiv:2510.10581), AgenTracer (arXiv:2509.03312), and the Lifecycle of Failures study (arXiv:2509.23735): attribution accuracy lifts substantially (46.3% → 65.8% in the lifecycle paper) when replay and dependency-graph construction are harness-enforced rather than prompt-suggested.
 
@@ -50,6 +51,17 @@ Each phase is a contract. Inputs are explicit; outputs are schema-validated; exi
 - Failure description OR upstream handoff artifact (`repair-failed-report.md`, trace file, bug report, CI log)
 - Repository root + test command + environment spec
 - Mission authority flag: `read-only` / `sandbox` / `write`
+
+**ECL inbound verification (escalation entry mode).** When VIGIL is invoked on the escalation entry mode (APIVR-Δ → VIGIL), Phase V MUST verify the inbound envelope BEFORE processing the payload:
+
+1. Read `<repair-failed-report>.envelope.json` if present alongside the upstream artifact.
+2. Validate it against `schemas/ecl/envelope.v1.json`.
+3. Confirm `from.eidolon == "apivr"` and `to.eidolon == "vigil"` and `performative ∈ {ESCALATE, REQUEST, ACKNOWLEDGE}` per `schemas/ecl/contracts/apivr-to-vigil.yaml`.
+4. Recompute `sha256` of the payload bytes and confirm it matches `envelope.integrity.value`.
+5. Append `verify_pass` or `verify_fail` trace event to `.eidolons/.trace/<thread_id>.jsonl` (relative to consumer project root per ECL §5.1.1).
+6. On `verify_fail`: halt mission, emit a `[GAP]` finding referencing the failure code (`INTEGRITY_MISMATCH` / `SCHEMA_INVALID` / `UNDECLARED_EDGE` / `PERFORMATIVE_NOT_ALLOWED` per ECL §5.3).
+
+If no envelope sidecar is present (non-ECL APIVR-Δ), skip verification and proceed normally.
 
 **Outputs.** `reproduction.md` — schema-validated, includes:
 - `MISSION-ID`
@@ -168,9 +180,17 @@ Each phase is a contract. Inputs are explicit; outputs are schema-validated; exi
 
 **Outputs.**
 1. **`root-cause-report.md`** (primary deliverable) — per `templates/root-cause-report.md`
-2. **`verified-patch.diff`** — if authority ≥ `sandbox` and survivor was a code change
-3. **`failure-signature.yaml`** — entry for the semantic memory ledger
-4. **Handoff directive** — pointer to downstream recipient (APIVR-Δ / SPECTRA / IDG / human)
+2. **`root-cause-report-<mission-id>.envelope.json`** (or `…envelope.<recipient>.json` for fan-out) — ECL v1.0 envelope sidecar per `templates/root-cause-report.envelope.json`
+3. **`verified-patch.diff`** — if authority ≥ `sandbox` and survivor was a code change
+4. **`failure-signature.yaml`** — entry for the semantic memory ledger
+5. **Handoff directive** — pointer to downstream recipient (APIVR-Δ / SPECTRA / IDG / human)
+
+**ECL envelope emission (Phase L).** After the payload is written, emit the envelope sidecar(s) per I-11:
+
+1. Compute `sha256` of the payload bytes.
+2. Generate a UUIDv7 `message_id`. Reuse `thread_id` from the inbound envelope on escalation entry; generate a new one on consultant/post-hoc first emit.
+3. For fan-out (e.g. SPEC_DEFECT → SPECTRA + IDG): write the payload once, then write **one envelope per recipient** with distinct `message_id` values and shared `thread_id` and `parent_id`. File suffix: `<basename>.envelope.<recipient>.json` (e.g. `…envelope.spectra.json`, `…envelope.idg.json`). The `vigil-to-idg` envelope MUST set `constraints.trust_level: "standard"`; `vigil-to-apivr` and `vigil-to-spectra` envelopes MUST set `constraints.trust_level: "high"`.
+4. Append one `emit` trace event per envelope to `.eidolons/.trace/<thread_id>.jsonl` (relative to consumer project root per ECL §5.1.1; create the directory if absent).
 
 **Method.**
 1. Walk the root cause back to its originating decision — commit, prompt, schema, config change. Cite the chain explicitly.
@@ -316,6 +336,14 @@ Canary dataset: `evals/canary/` — includes deterministic regressions, heisenbu
 
 `VIGIL.md` is the authoritative spec. Breaking changes to phase contracts or JSON schemas require a minor-version bump (v1.1, v1.2…). Major bumps reserved for invariant changes. Implementations declare `methodology: VIGIL` and `methodology_version: 1.0` in their `agent.md` frontmatter.
 
+## 10. ECL Compatibility
+
+VIGIL v1.1 emits ECL v1.0 envelopes by default on all inter-Eidolon hand-offs. The `ECL_VERSION` file in the repository root declares the targeted spec version (`1.0`). The nexus reads this during `eidolons sync` and warns on mismatches exceeding one minor (per ECL §7.2).
+
+Integrity method: `sha256` for all v1.1.0 edges. `hmac-sha256` (RECOMMENDED for `trust_level: high` edges per ECL §6.3) is deferred to a future release pending `ECL_HMAC_KEY` distribution support in the nexus (D1). The choice is forwards-compatible: VIGIL v1.2 can promote to `hmac-sha256` without a SemVer break in any peer.
+
+Vendored schemas reside at `schemas/ecl/` and are self-contained (performative enum inlined, no external `$ref` resolver required). Vendored contracts reside at `schemas/ecl/contracts/`.
+
 ---
 
-*VIGIL v1.0.1 — Methodology specification*
+*VIGIL v1.1.0 — Methodology specification*
