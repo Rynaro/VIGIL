@@ -5,7 +5,7 @@ methodology: VIGIL
 methodology_version: "1.0"
 description: "Forensic specialist. Post-mortem root-cause attribution for code failures, grounded in reproduction, IDG analysis, and counterfactual intervention."
 comm:
-  envelope_version: "1.0"
+  envelope_version: "1.2"
   emits:
     - root-cause-report
     - escalation-brief
