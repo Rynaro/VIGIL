@@ -7,6 +7,29 @@ Version numbers follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ---
 
+## [1.1.1] — 2026-05-12 — Declare ECL v1.2 conformance
+
+### Changed
+- `ECL_VERSION` file: `1.0` → `1.2`. Targets the latest ECL spec
+  (`Rynaro/eidolons-ecl@v1.2.0`); VIGIL's emit envelopes remain
+  byte-compatible (v1.2 is backward-compatible with v1.0 per ECL §1.1.1).
+- `agent.md` frontmatter: `comm.envelope_version` `"1.0"` → `"1.2"`.
+- `install.sh`: `EIDOLON_VERSION` `1.1.0` → `1.1.1` (PATCH bump —
+  declaration-only change; no behaviour change).
+
+### Notes
+- No envelope-format changes. v1.0 envelopes already emitted by older
+  VIGIL releases are valid under v1.2 conformance.
+- VIGIL's emit edges to APIVR-Δ and SPECTRA are `trust_level=high`
+  per `vigil-to-apivr.yaml` and `vigil-to-spectra.yaml`. ECL v1.1 gate
+  I-5 SHOULD-level warns when high-trust envelopes use `sha256`.
+  Operators provisioning VIGIL at scale SHOULD pass
+  `--integrity-method hmac-sha256` with an `ECL_HMAC_KEY` env per ECL
+  v1.1 §6.4. The apivr-vigil escalation worked example in
+  `Rynaro/eidolons-ecl@v1.1.0+` already demonstrates this pattern.
+- Inbound verification (`repair-failed-report` from APIVR-Δ) continues
+  to accept v1.0/v1.1/v1.2 envelopes; halt-on-fail semantics preserved.
+
 ## [1.1.0] — 2026-05-10 — ECL v1.0 adoption
 
 ### Added
