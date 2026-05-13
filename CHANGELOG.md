@@ -7,6 +7,32 @@ Version numbers follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ---
 
+## [1.1.2] — 2026-05-13 — declare ECL v2.0 conformance
+
+### Changed
+
+- Declaration-only patch bump. No behaviour change, no schema change, no
+  envelope-shape change.
+- VIGIL emit envelopes are byte-compatible with ECL v2.0 (backward-compatible
+  per ECL §7.3; compatibility window through 2027-05-13).
+
+Files modified:
+- `ECL_VERSION` — `1.2` → `2.0`
+- `agent.md` frontmatter `comm.envelope_version` — `"1.2"` → `"2.0"`
+- `install.sh` `EIDOLON_VERSION` — `1.1.1` → `1.1.2`
+
+### Notes
+
+- AGENTS.md has no YAML frontmatter — Markdown-only entry point; no comm-block
+  edit there.
+- Spec reference: `Rynaro/eidolons-ecl@v2.0.0` (`spec/ecl-2.0.md`, ISE trust
+  hierarchy).
+- Final patch of the Phase 2.D cycle: all six Eidolons now declare ECL v2.0
+  conformance. ATLAS v1.5.2, SPECTRA v4.3.2, APIVR-Δ v3.1.2, IDG v1.2.2,
+  FORGE v1.3.2 already released; VIGIL v1.1.2 closes the cycle.
+
+---
+
 ## [1.1.1] — 2026-05-12 — Declare ECL v1.2 conformance
 
 ### Changed
