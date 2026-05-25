@@ -65,7 +65,7 @@ The `evals/canary/` directory contains a curated mission dataset spanning determ
 
 ## Versioning
 
-`VIGIL.md` is authoritative. Breaking changes to phase contracts or JSON schemas require a minor-version bump. Implementations declare `methodology: VIGIL` and `methodology_version: 1.0` in `agent.md` frontmatter.
+`SPEC.md` is authoritative. Breaking changes to phase contracts or JSON schemas require a minor-version bump. Implementations declare `methodology: VIGIL` and `methodology_version: 1.0` in `agent.md` frontmatter.
 
 ## Reference Implementations
 

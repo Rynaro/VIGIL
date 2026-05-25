@@ -2,7 +2,6 @@
   "eidolon": "vigil",
   "version": "1.2.0",
   "methodology": "VIGIL",
-  "eiis_version": "1.3",
   "installed_at": "2026-05-25T00:00:00Z",
   "target": "./.eidolons/vigil",
   "spec_file": ".eidolons/vigil/SPEC.md",
@@ -207,10 +206,5 @@
       ".vigil/config.yml",
       "memories/vigil-failures.yaml"
     ]
-  },
-  "comm": {
-    "envelope_version": "2.0",
-    "emits": ["root-cause-report", "escalation-brief"],
-    "consumes": ["repair-failed-report"]
   }
 }

@@ -334,7 +334,7 @@ Canary dataset: `evals/canary/` — includes deterministic regressions, heisenbu
 
 ## 9. Versioning Policy
 
-`VIGIL.md` is the authoritative spec. Breaking changes to phase contracts or JSON schemas require a minor-version bump (v1.1, v1.2…). Major bumps reserved for invariant changes. Implementations declare `methodology: VIGIL` and `methodology_version: 1.0` in their `agent.md` frontmatter.
+`SPEC.md` is the authoritative spec. Breaking changes to phase contracts or JSON schemas require a minor-version bump (v1.1, v1.2…). Major bumps reserved for invariant changes. Implementations declare `methodology: VIGIL` and `methodology_version: 1.0` in their `agent.md` frontmatter.
 
 ## 10. ECL Compatibility
 

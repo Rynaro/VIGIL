@@ -33,7 +33,7 @@ Do NOT load VIGIL for feature implementation (APIVR-Δ), planning (SPECTRA),
 documentation (IDG), or healthy-codebase exploration (ATLAS).
 
 Full methodology: @agents/vigil/agent.md
-Specification: @agents/vigil/VIGIL.md
+Specification: @agents/vigil/SPEC.md
 
 Follow the V→I→G→I→L cycle strictly. Invariants in agent.md are non-negotiable.
 ```
