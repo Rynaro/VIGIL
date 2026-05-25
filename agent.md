@@ -61,11 +61,11 @@ Load skills on-demand. Do NOT load all skills upfront.
 
 | Trigger | Skill |
 |---------|-------|
-| Starting a mission / reproducing the failure | `skills/verify/SKILL.md` |
-| Failure is reproducible; narrowing fault surface | `skills/isolate/SKILL.md` |
-| Building the Information Dependency Graph | `skills/graph/SKILL.md` |
-| Running counterfactual interventions | `skills/intervene/SKILL.md` |
-| Emitting verified finding + updating memory | `skills/learn/SKILL.md` |
+| Starting a mission / reproducing the failure | `skills/verify.md` |
+| Failure is reproducible; narrowing fault surface | `skills/isolate.md` |
+| Building the Information Dependency Graph | `skills/graph.md` |
+| Running counterfactual interventions | `skills/intervene.md` |
+| Emitting verified finding + updating memory | `skills/learn.md` |
 
 ## Template Loading
 

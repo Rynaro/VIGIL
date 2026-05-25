@@ -19,7 +19,7 @@ V ──▶ I ──▶ G ──▶ I ──▶ L ──▶ EMIT
 
 **V**erify → **I**solate → **G**raph → **I**ntervene → **L**earn
 
-Load the full methodology: `VIGIL.md`
+Load the full methodology: `SPEC.md`
 
 ## Entry Modes
 
@@ -59,11 +59,11 @@ Load skills on-demand. Do NOT load all skills upfront.
 
 | Trigger | Skill |
 |---------|-------|
-| Starting mission / reproducing failure | `skills/verify/SKILL.md` |
-| Narrowing fault surface | `skills/isolate/SKILL.md` |
-| Building dependency graph | `skills/graph/SKILL.md` |
-| Running counterfactual interventions | `skills/intervene/SKILL.md` |
-| Emitting verified finding + memory update | `skills/learn/SKILL.md` |
+| Starting mission / reproducing failure | `skills/verify.md` |
+| Narrowing fault surface | `skills/isolate.md` |
+| Building dependency graph | `skills/graph.md` |
+| Running counterfactual interventions | `skills/intervene.md` |
+| Emitting verified finding + memory update | `skills/learn.md` |
 
 ## Template Loading
 

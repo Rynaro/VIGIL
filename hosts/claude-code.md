@@ -22,7 +22,7 @@ For code failures that resist normal repair (heisenbugs, regressions, compound
 failures, post-APIVR-Δ escalations), consult VIGIL:
 
 - Entry: `@agents/vigil/agent.md`
-- Spec: `@agents/vigil/VIGIL.md`
+- Spec: `@agents/vigil/SPEC.md`
 - Invocation: "Load VIGIL and investigate [failure description]"
 ```
 

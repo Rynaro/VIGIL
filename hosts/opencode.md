@@ -21,7 +21,7 @@ description: Forensic debugger. Root-cause attribution for code failures via rep
 methodology: VIGIL
 methodology_version: "1.0"
 entry_point: agents/vigil/agent.md
-spec: agents/vigil/VIGIL.md
+spec: agents/vigil/SPEC.md
 tools:
   - read_file
   - write_file

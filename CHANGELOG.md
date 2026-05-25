@@ -7,6 +7,38 @@ Version numbers follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ---
 
+## [1.2.0] — 2026-05-25 — EIIS v1.3: SPEC.md + flat skills + vendor .claude/skills
+
+### Changed
+
+- **BREAKING:** full-spec destination renamed `VIGIL.md` → `SPEC.md` (EIIS v1.3 §1.8).
+  Source repo file also renamed. Installers checking for `VIGIL.md` must update.
+- **BREAKING:** skills layout flattened from `skills/<phase>/SKILL.md` (subdir) to
+  `skills/<phase>.md` (flat). Consumers that load `skills/verify/SKILL.md`, etc. must
+  update to `skills/verify.md`.
+- `install.sh` `EIDOLON_VERSION` — `1.1.2` → `1.2.0`.
+- Source sanity guard now checks for `SPEC.md` (was `VIGIL.md`).
+- Shared dispatch block and all generated host-wiring files updated to reference `SPEC.md`.
+- `agent.md` skill-loading table updated to flat `skills/<phase>.md` paths.
+- `CLAUDE.md` load-order table updated to flat paths and `SPEC.md`.
+- `README.md` architecture tree updated to flat layout and `SPEC.md`.
+
+### Added
+
+- Skills now dual-written to `.claude/skills/vigil-<skill>/SKILL.md` for Claude Code
+  auto-load (EIIS v1.3 §4.2.4). VIGIL previously did not vendor its skills to the
+  Claude Code host directory.
+- `wire_skill` helper added to `install.sh`; called for each of the 5 skills
+  (`verify`, `isolate`, `graph`, `intervene`, `learn`).
+- Manifest gains `spec_file` field and `skills[]` array per EIIS v1.3 schema.
+
+### Compliance
+
+- `EIIS_VERSION` bumped from `1.1` to `1.3`.
+- Manifest `eiis_version` field set to `"1.3"`.
+
+---
+
 ## [1.1.2] — 2026-05-13 — declare ECL v2.0 conformance
 
 ### Changed

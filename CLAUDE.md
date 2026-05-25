@@ -4,7 +4,7 @@ VIGIL is the team's forensic debugger. This file points Claude Code at the autho
 
 ## Quick Reference
 
-- **Authoritative spec:** `VIGIL.md`
+- **Authoritative spec:** `SPEC.md`
 - **Always-loaded entry:** `agent.md`
 - **Methodology:** `VIGIL` v1.0
 - **Phase cycle:** V → I → G → I → L (Verify · Isolate · Graph · Intervene · Learn)
@@ -12,9 +12,9 @@ VIGIL is the team's forensic debugger. This file points Claude Code at the autho
 ## Load Order
 
 1. `agent.md` — always loaded, ~900 tokens, identity + invariants + skill triggers
-2. `skills/<phase>/SKILL.md` — loaded on phase entry
+2. `skills/<phase>.md` — loaded on phase entry
 3. `templates/<type>.md` — loaded on artifact composition
-4. `VIGIL.md` — consulted only for spec clarification; not part of the default working set
+4. `SPEC.md` — consulted only for spec clarification; not part of the default working set
 
 ## Invocation Triggers
 
@@ -65,7 +65,7 @@ The `evals/canary/` directory contains a curated mission dataset spanning determ
 
 ## Versioning
 
-`VIGIL.md` is authoritative. Breaking changes to phase contracts or JSON schemas require a minor-version bump. Implementations declare `methodology: VIGIL` and `methodology_version: 1.0` in `agent.md` frontmatter.
+`SPEC.md` is authoritative. Breaking changes to phase contracts or JSON schemas require a minor-version bump. Implementations declare `methodology: VIGIL` and `methodology_version: 1.0` in `agent.md` frontmatter.
 
 ## Reference Implementations
 
@@ -78,4 +78,4 @@ VIGIL is host-agnostic. See `hosts/` for wiring notes per host:
 
 ---
 
-*VIGIL v1.1.0 — see `VIGIL.md` for the full specification*
+*VIGIL v1.2.0 — see `SPEC.md` for the full specification*

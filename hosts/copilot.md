@@ -43,7 +43,7 @@ non-negotiable. Every root-cause claim requires:
 - Counterfactual intervention that FLIPS failure → success
 - Bounded to 5 interventions max — escalate if exhausted
 
-Full methodology: agents/vigil/VIGIL.md
+Full methodology: agents/vigil/SPEC.md
 ```
 
 ## AGENTS.md (Open Standard)
@@ -67,7 +67,7 @@ SPECTRA), add a section:
 For root-cause attribution on code failures, switch to VIGIL:
 
 - Entry: agents/vigil/AGENTS.md
-- Methodology: agents/vigil/VIGIL.md
+- Methodology: agents/vigil/SPEC.md
 - Cycle: V → I → G → I → L
 - Trigger phrases: "debug this", "why did this fail", "investigate the
   regression", "this test is flaky", "APIVR-Δ escalated"
