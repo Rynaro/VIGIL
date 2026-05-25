@@ -4,7 +4,8 @@
 set -euo pipefail
 
 EIDOLON_NAME="vigil"
-EIDOLON_VERSION="1.1.2"
+EIDOLON_SLUG="vigil"
+EIDOLON_VERSION="1.2.0"
 METHODOLOGY="VIGIL"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -134,8 +135,8 @@ sha256_file() {
 # --------------------------------------------------------------------------- #
 # Source sanity check
 # --------------------------------------------------------------------------- #
-if [[ ! -f "${SCRIPT_DIR}/VIGIL.md" ]]; then
-  echo "ERROR: install.sh must run from the VIGIL source directory (VIGIL.md not found)" >&2
+if [[ ! -f "${SCRIPT_DIR}/SPEC.md" ]]; then
+  echo "ERROR: install.sh must run from the VIGIL source directory (SPEC.md not found)" >&2
   exit 3
 fi
 
@@ -216,6 +217,7 @@ log "Hosts: ${HOSTS_ARRAY[*]}"
 # Directory creation
 # --------------------------------------------------------------------------- #
 FILES_WRITTEN=()
+SKILLS_WRITTEN=()
 
 maybe_mkdir() {
   do_action "mkdir -p $1" mkdir -p "$1"
@@ -223,11 +225,7 @@ maybe_mkdir() {
 
 if [[ "$MANIFEST_ONLY" != "true" ]]; then
   maybe_mkdir "${TARGET}"
-  maybe_mkdir "${TARGET}/skills/verify"
-  maybe_mkdir "${TARGET}/skills/isolate"
-  maybe_mkdir "${TARGET}/skills/graph"
-  maybe_mkdir "${TARGET}/skills/intervene"
-  maybe_mkdir "${TARGET}/skills/learn"
+  maybe_mkdir "${TARGET}/skills"
   maybe_mkdir "${TARGET}/templates"
   maybe_mkdir "${TARGET}/schemas"
   maybe_mkdir "${TARGET}/schemas/ecl"
@@ -248,9 +246,54 @@ copy_file() {
   fi
 }
 
+# wire_skill <skill_name>
+#
+# Dual-writes a skill file:
+#   - source-of-truth: ${TARGET}/skills/<skill_name>.md
+#   - vendor copy:     .claude/skills/${EIDOLON_SLUG}-<skill_name>/SKILL.md
+#
+# Source file resolved as: ${SCRIPT_DIR}/skills/<skill_name>.md
+#
+# Records both files in FILES_WRITTEN and a skills[] entry in SKILLS_WRITTEN
+# with role "skill" and matching SHA-256. Bash 3.2 compatible.
+wire_skill() {
+  local skill="$1"
+  local src="${SCRIPT_DIR}/skills/${skill}.md"
+  local dst_src="${TARGET}/skills/${skill}.md"
+  local dst_vendor=".claude/skills/${EIDOLON_SLUG}-${skill}/SKILL.md"
+
+  if [ ! -f "${src}" ]; then
+    echo "ERROR: skill source not found: ${src}" >&2
+    exit 3
+  fi
+
+  if [[ "$DRY_RUN" == "true" ]]; then
+    echo "  [dry-run] copy ${src} → ${dst_src}"
+    if printf '%s\n' "${HOSTS_ARRAY[@]:-}" | grep -q 'claude-code'; then
+      echo "  [dry-run] copy ${src} → ${dst_vendor}"
+    fi
+    return
+  fi
+
+  mkdir -p "$(dirname "${dst_src}")"
+  cp "${src}" "${dst_src}"
+  local src_chk; src_chk=$(sha256_file "${dst_src}")
+  FILES_WRITTEN+=("{\"path\":\"${dst_src}\",\"sha256\":\"${src_chk}\",\"role\":\"skill\",\"mode\":\"created\"}")
+
+  if printf '%s\n' "${HOSTS_ARRAY[@]:-}" | grep -q 'claude-code'; then
+    mkdir -p "$(dirname "${dst_vendor}")"
+    cp "${src}" "${dst_vendor}"
+    local vendor_chk; vendor_chk=$(sha256_file "${dst_vendor}")
+    FILES_WRITTEN+=("{\"path\":\"${dst_vendor}\",\"sha256\":\"${vendor_chk}\",\"role\":\"skill\",\"mode\":\"created\"}")
+    SKILLS_WRITTEN+=("{\"name\":\"${skill}\",\"source_path\":\".eidolons/${EIDOLON_SLUG}/skills/${skill}.md\",\"source_sha256\":\"${src_chk}\",\"vendor_path\":\".claude/skills/${EIDOLON_SLUG}-${skill}/SKILL.md\",\"vendor_sha256\":\"${vendor_chk}\"}")
+  else
+    SKILLS_WRITTEN+=("{\"name\":\"${skill}\",\"source_path\":\".eidolons/${EIDOLON_SLUG}/skills/${skill}.md\",\"source_sha256\":\"${src_chk}\"}")
+  fi
+}
+
 if [[ "$MANIFEST_ONLY" != "true" ]]; then
   copy_file "agent.md"            "${TARGET}/agent.md"            "entry-point"
-  copy_file "VIGIL.md"            "${TARGET}/VIGIL.md"            "spec"
+  copy_file "SPEC.md"             "${TARGET}/SPEC.md"             "spec"
   copy_file "AGENTS.md"           "${TARGET}/AGENTS.md"           "entry-point"
   copy_file "CLAUDE.md"           "${TARGET}/CLAUDE.md"           "dispatch"
   copy_file "DESIGN-RATIONALE.md" "${TARGET}/DESIGN-RATIONALE.md" "other"
@@ -259,7 +302,7 @@ if [[ "$MANIFEST_ONLY" != "true" ]]; then
   copy_file "ECL_VERSION"         "${TARGET}/ECL_VERSION"         "other"
 
   for phase in verify isolate graph intervene learn; do
-    copy_file "skills/${phase}/SKILL.md" "${TARGET}/skills/${phase}/SKILL.md" "skill"
+    wire_skill "${phase}"
   done
 
   for tpl in root-cause-report verified-patch failure-signature escalation-brief; do
@@ -301,7 +344,7 @@ fi
 SHARED_BLOCK="## VIGIL — Forensic debugger (v${EIDOLON_VERSION})
 
 Entry:     \`${TARGET}/agent.md\`
-Full spec: \`${TARGET}/VIGIL.md\`
+Full spec: \`${TARGET}/SPEC.md\`
 Cycle:     V (Verify) → I (Isolate) → G (Graph) → I (Intervene) → L (Learn)
 Authority: ${MODE}
 
@@ -407,7 +450,7 @@ authority: ${MODE}
 You execute the VIGIL methodology: **V**erify → **I**solate → **G**raph →
 **I**ntervene → **L**earn. You attribute root causes under evidence
 discipline. You do NOT plan, implement, or chronicle — you decide what
-went wrong. Full spec: \`${TARGET}/VIGIL.md\`.
+went wrong. Full spec: \`${TARGET}/SPEC.md\`.
 
 Authority: **${MODE}**. See \`${TARGET}/agent.md\` for P0 invariants
 and phase-skill triggers."
@@ -444,7 +487,7 @@ globs: "**/*"
 alwaysApply: false
 ---
 
-See ${TARGET}/agent.md for the always-loaded entry and ${TARGET}/VIGIL.md
+See ${TARGET}/agent.md for the always-loaded entry and ${TARGET}/SPEC.md
 for the authoritative specification. Authority: ${MODE}.
 EOF
       chk=$(sha256_file "$CURSOR_RULE")
@@ -471,8 +514,8 @@ description: "VIGIL v${EIDOLON_VERSION} — forensic debugger, V→I→G→I→L
 ---
 
 You are the VIGIL forensic debugger. Full rules: \`${TARGET}/AGENTS.md\`.
-Always-loaded profile: \`${TARGET}/agent.md\`. Full spec: \`${TARGET}/VIGIL.md\`.
-Phase skills: \`${TARGET}/skills/<phase>/SKILL.md\` — load per phase.
+Always-loaded profile: \`${TARGET}/agent.md\`. Full spec: \`${TARGET}/SPEC.md\`.
+Phase skills: \`${TARGET}/skills/<phase>.md\` — load per phase.
 Authority: ${MODE}.
 EOF
       chk=$(sha256_file "$OC_AGENT")
@@ -506,8 +549,8 @@ went wrong.
 When Codex delegates to this subagent, treat the methodology described
 in \`${TARGET}/agent.md\` as authoritative. The full ruleset lives in
 \`${TARGET}/AGENTS.md\` and the canonical specification in
-\`${TARGET}/VIGIL.md\`. Phase skills under
-\`${TARGET}/skills/<phase>/SKILL.md\` load per phase.
+\`${TARGET}/SPEC.md\`. Phase skills under
+\`${TARGET}/skills/<phase>.md\` load per phase.
 
 Authority: **${MODE}**. See \`${TARGET}/agent.md\` for P0 invariants
 and phase-skill triggers."
@@ -612,6 +655,11 @@ if [[ ${#FILES_WRITTEN[@]} -gt 0 ]]; then
   FILES_JSON="$(printf '%s,' "${FILES_WRITTEN[@]}" | sed 's/,$//')"
 fi
 
+SKILLS_JSON=""
+if [[ ${#SKILLS_WRITTEN[@]} -gt 0 ]]; then
+  SKILLS_JSON="$(printf '%s,' "${SKILLS_WRITTEN[@]}" | sed 's/,$//')"
+fi
+
 MANIFEST_PATH="${TARGET}/install.manifest.json"
 if [[ "$DRY_RUN" != "true" ]]; then
   mkdir -p "${TARGET}"
@@ -620,10 +668,13 @@ if [[ "$DRY_RUN" != "true" ]]; then
   "eidolon": "${EIDOLON_NAME}",
   "version": "${EIDOLON_VERSION}",
   "methodology": "${METHODOLOGY}",
+  "eiis_version": "1.3",
   "installed_at": "${INSTALLED_AT}",
   "target": "${TARGET}",
+  "spec_file": ".eidolons/${EIDOLON_SLUG}/SPEC.md",
   "hosts_wired": [${HOSTS_JSON}],
   "files_written": [${FILES_JSON}],
+  "skills": [${SKILLS_JSON}],
   "handoffs_declared": {
     "upstream": [],
     "downstream": ["apivr", "spectra", "idg", "forge"]
@@ -639,7 +690,7 @@ if [[ "$DRY_RUN" != "true" ]]; then
     "persists": [".vigil/config.yml", "memories/vigil-failures.yaml"]
   },
   "comm": {
-    "envelope_version": "1.0",
+    "envelope_version": "2.0",
     "emits": ["root-cause-report", "escalation-brief"],
     "consumes": ["repair-failed-report"]
   }
