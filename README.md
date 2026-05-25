@@ -74,7 +74,7 @@ VIGIL: [loads agents/vigil/agent.md]
 ```
 vigil/
 ├── agent.md                      # Always-loaded entry (~900 tokens)
-├── VIGIL.md                      # Authoritative specification
+├── SPEC.md                       # Authoritative specification
 ├── AGENTS.md                     # Open-standard rule set
 ├── CLAUDE.md                     # Claude Code entry point
 ├── DESIGN-RATIONALE.md           # Research → design decision map
@@ -83,11 +83,11 @@ vigil/
 ├── install.sh                    # Idempotent installer
 │
 ├── skills/                       # On-demand per phase
-│   ├── verify/SKILL.md           # Reproduction protocol
-│   ├── isolate/SKILL.md          # Fault surface reduction
-│   ├── graph/SKILL.md            # IDG construction
-│   ├── intervene/SKILL.md        # Counterfactual replay
-│   └── learn/SKILL.md            # Finding emission + memory
+│   ├── verify.md                 # Reproduction protocol
+│   ├── isolate.md                # Fault surface reduction
+│   ├── graph.md                  # IDG construction
+│   ├── intervene.md              # Counterfactual replay
+│   └── learn.md                  # Finding emission + memory
 │
 ├── templates/                    # Artifact skeletons
 │   ├── root-cause-report.md      # Primary deliverable
@@ -129,7 +129,7 @@ Ten invariants, mechanically enforced where possible:
 | I-9 | Sandbox adapter interface |
 | I-10 | Telemetry-driven compaction |
 
-Full detail: `VIGIL.md`. Rationale: `DESIGN-RATIONALE.md`.
+Full detail: `SPEC.md`. Rationale: `DESIGN-RATIONALE.md`.
 
 ## Failure Taxonomy (11 categories)
 
@@ -213,7 +213,7 @@ VIGIL composes with the rest of the team:
 
 ## Versioning
 
-`VIGIL.md` is authoritative. Breaking changes to phase contracts or JSON schemas require minor-version bumps. See `CHANGELOG.md`.
+`SPEC.md` is authoritative. Breaking changes to phase contracts or JSON schemas require minor-version bumps. See `CHANGELOG.md`.
 
 ## License
 
