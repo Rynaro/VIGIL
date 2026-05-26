@@ -284,6 +284,7 @@ if [[ "$MANIFEST_ONLY" != "true" ]]; then
   maybe_mkdir "${TARGET}/schemas/ecl/contracts"
   maybe_mkdir "${TARGET}/hosts"
   maybe_mkdir "${TARGET}/evals/canary"
+  cleanup_legacy_v1_2 "${TARGET}"
 fi
 
 # --------------------------------------------------------------------------- #
