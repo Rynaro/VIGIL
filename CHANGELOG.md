@@ -7,6 +7,28 @@ Version numbers follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ---
 
+## [1.3.1] — 2026-05-26 — SPEC.md text sweep: retire local ECL file refs
+
+### Fixed
+
+- **I-11 (invariant table):** replaced local path `schemas/ecl/envelope.v1.json`
+  with prose pointing to upstream `Rynaro/eidolons-ecl`.
+- **Phase V step 2:** replaced `schemas/ecl/envelope.v1.json` ref with upstream
+  pointer to `Rynaro/eidolons-ecl — envelope.v1.json`.
+- **Phase V step 3:** replaced `schemas/ecl/contracts/apivr-to-vigil.yaml` ref
+  with upstream pointer to `Rynaro/eidolons-ecl — contracts/apivr-to-vigil.yaml`.
+- **Phase L output 2:** replaced local path `templates/root-cause-report.envelope.json`
+  (not installed to the target since v1.3.0) with prose pointing to the ECL envelope
+  schema at `Rynaro/eidolons-ecl — envelope.v1.json`. The file remains in the
+  source repo at `templates/root-cause-report.envelope.json` but is not part of the
+  install-target whitelist and was removed from the published SPEC reference.
+- **Section 10 (ECL Compatibility):** replaced the vendored-schemas claim
+  (`schemas/ecl/` and `schemas/ecl/contracts/`) with prose directing implementors
+  to fetch schemas directly from `Rynaro/eidolons-ecl`.
+- **SPEC.md footer:** corrected version label from `v1.1.0` to `v1.3.1`.
+
+---
+
 ## [1.3.0] — 2026-05-26 — EIIS v1.4: canonical inventory + host-vendor refs
 
 ### Changed
