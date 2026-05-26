@@ -7,6 +7,46 @@ Version numbers follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ---
 
+## [1.3.0] — 2026-05-26 — EIIS v1.4: canonical inventory + host-vendor refs
+
+### Changed
+
+- Declares EIIS v1.4 conformance (`EIIS_VERSION = 1.4`).
+- **BREAKING (install-target):** `CHANGELOG.md`, `CLAUDE.md`, `README.md`,
+  `DESIGN-RATIONALE.md`, and `AGENTS.md` are no longer copied to `<target>/`.
+  Source repo retains these files at root per EIIS §1.1. Consumers that
+  referenced these paths from the install target must load them from the
+  consumer project's own files or from VIGIL's source repo.
+- `agent.md` manifest role changed from `entry-point` to `agent-profile`
+  (EIIS v1.4 §1.8.6).
+- `ECL_VERSION` manifest role changed from `other` to `ecl-version`
+  (EIIS v1.4 §3.7.1).
+- `.claude/agents/vigil.md` heredoc rewritten per EIIS v1.4 §4.2.6:
+  references both `./.eidolons/vigil/agent.md` (P0 rules) and
+  `./.eidolons/vigil/SPEC.md` (deep spec); legacy `VIGIL.md` reference
+  removed.
+- Install no longer copies `schemas/ecl/` tree or `templates/*.envelope.json`
+  to the install target (not in the §1.7 whitelist); source-repo files
+  are unchanged.
+- `EIIS_VERSION` bumped `1.3` → `1.4`.
+- Manifest `eiis_version` field set to `"1.4"`; `canonical_inventory_strict`
+  set to `true`.
+
+### Added
+
+- `canonical_inventory_sweep` helper in `install.sh`: manifest-driven sweep
+  removes any non-whitelisted file under `<target>/` after every install
+  (EIIS v1.4 §6.X). Works alongside the existing `cleanup_legacy_v1_2`
+  early sweep.
+- `LEGACY_SPEC_FILES` extended with `AGENTS.md`, `CHANGELOG.md`, `CLAUDE.md`,
+  `README.md`, `DESIGN-RATIONALE.md` for belt-and-braces early cleanup on
+  upgrade from v1.2.1 installs.
+- Vendored manifest schema (`schemas/install.manifest.v1.json`) updated to
+  EIIS v1.4: `role` enum gains `agent-profile` and `ecl-version`; schema gains
+  optional top-level `canonical_inventory_strict` field.
+
+---
+
 ## [1.2.1] — 2026-05-26
 
 ### Fixed

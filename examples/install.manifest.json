@@ -1,8 +1,9 @@
 {
   "eidolon": "vigil",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "methodology": "VIGIL",
-  "installed_at": "2026-05-25T00:00:00Z",
+  "canonical_inventory_strict": true,
+  "installed_at": "2026-05-26T00:00:00Z",
   "target": "./.eidolons/vigil",
   "spec_file": ".eidolons/vigil/SPEC.md",
   "hosts_wired": [
@@ -12,7 +13,7 @@
     {
       "path": "./.eidolons/vigil/agent.md",
       "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
-      "role": "entry-point",
+      "role": "agent-profile",
       "mode": "created"
     },
     {
@@ -22,39 +23,9 @@
       "mode": "created"
     },
     {
-      "path": "./.eidolons/vigil/AGENTS.md",
-      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
-      "role": "entry-point",
-      "mode": "created"
-    },
-    {
-      "path": "./.eidolons/vigil/CLAUDE.md",
-      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
-      "role": "dispatch",
-      "mode": "created"
-    },
-    {
-      "path": "./.eidolons/vigil/DESIGN-RATIONALE.md",
-      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
-      "role": "other",
-      "mode": "created"
-    },
-    {
-      "path": "./.eidolons/vigil/README.md",
-      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
-      "role": "other",
-      "mode": "created"
-    },
-    {
-      "path": "./.eidolons/vigil/CHANGELOG.md",
-      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
-      "role": "other",
-      "mode": "created"
-    },
-    {
       "path": "./.eidolons/vigil/ECL_VERSION",
       "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
-      "role": "other",
+      "role": "ecl-version",
       "mode": "created"
     },
     {
@@ -142,6 +113,24 @@
       "mode": "created"
     },
     {
+      "path": "./.eidolons/vigil/schemas/reproduction.v1.json",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "role": "other",
+      "mode": "created"
+    },
+    {
+      "path": "./.eidolons/vigil/schemas/intervention-log.v1.json",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "role": "other",
+      "mode": "created"
+    },
+    {
+      "path": "./.eidolons/vigil/schemas/root-cause-report.v1.json",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "role": "other",
+      "mode": "created"
+    },
+    {
       "path": ".claude/agents/vigil.md",
       "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
       "role": "dispatch",
@@ -195,7 +184,7 @@
     ]
   },
   "token_budget": {
-    "entry": 918,
+    "entry": 933,
     "working_set_target": 3500
   },
   "security": {
