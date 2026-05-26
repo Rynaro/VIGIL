@@ -1,18 +1,28 @@
 #!/usr/bin/env bash
-# VIGIL installer — EIIS-1.1 conformant
+# VIGIL installer — EIIS-1.4 conformant
 # Usage: bash install.sh [OPTIONS]
 set -euo pipefail
 
 EIDOLON_NAME="vigil"
 EIDOLON_SLUG="vigil"
-EIDOLON_VERSION="1.2.1"
+EIDOLON_VERSION="1.3.0"
 METHODOLOGY="VIGIL"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # --------------------------------------------------------------------------- #
-# Legacy v1.2-era artefacts swept on upgrade (Strategy A — hardcoded list)
+# Legacy artefacts swept on upgrade (Strategy A — hardcoded early sweep)
+# v1.2-era filenames + v1.4 non-whitelisted files removed from install-target.
+# The canonical_inventory_sweep (late, manifest-driven) is the normative gate
+# per EIIS v1.4 §6.X; this early list is a belt-and-braces defensive layer.
 # --------------------------------------------------------------------------- #
-LEGACY_SPEC_FILES=( "VIGIL.md" )
+LEGACY_SPEC_FILES=( \
+  "VIGIL.md" \
+  "AGENTS.md" \
+  "CHANGELOG.md" \
+  "CLAUDE.md" \
+  "README.md" \
+  "DESIGN-RATIONALE.md" \
+)
 LEGACY_SKILL_DIRS=( \
   "graph" \
   "intervene" \
@@ -171,6 +181,50 @@ cleanup_legacy_v1_2() {
   return 0
 }
 
+# canonical_inventory_sweep <target>
+#
+# Remove every file under <target>/ that is not present in the in-memory
+# allow-set FILES_WRITTEN_PATHS. Called once, AFTER all writes complete,
+# BEFORE the manifest is finalized. Idempotent: no-op on a clean target.
+# EIIS v1.4 §6.X normative sweep; bash 3.2 compatible.
+#
+# Reads FILES_WRITTEN_PATHS — indexed array of target-relative or
+# consumer-relative paths written this run. Accumulated by copy_file,
+# wire_skill, and other write helpers during the install.
+canonical_inventory_sweep() {
+  local target="$1"
+  local file_rel
+  local found
+  local known
+
+  if [ -z "${target}" ] || [ ! -d "${target}" ]; then
+    return 0
+  fi
+
+  find "${target}" -type f -print0 | while IFS= read -r -d '' file; do
+    file_rel="${file#${target}/}"
+
+    found=0
+    for known in "${FILES_WRITTEN_PATHS[@]}"; do
+      case "${known}" in
+        *"/${file_rel}"|"${file_rel}")
+          found=1
+          break
+          ;;
+      esac
+    done
+
+    if [ "${found}" -eq 0 ]; then
+      rm -f "${file}"
+      warn "swept non-whitelisted file: ${file}"
+    fi
+  done
+
+  find "${target}" -mindepth 1 -type d -empty -delete 2>/dev/null || true
+
+  return 0
+}
+
 sha256_file() {
   local f="$1"
   if command -v shasum &>/dev/null; then
@@ -269,6 +323,7 @@ log "Hosts: ${HOSTS_ARRAY[*]}"
 # Directory creation
 # --------------------------------------------------------------------------- #
 FILES_WRITTEN=()
+FILES_WRITTEN_PATHS=()
 SKILLS_WRITTEN=()
 
 maybe_mkdir() {
@@ -282,8 +337,6 @@ if [[ "$MANIFEST_ONLY" != "true" ]]; then
   maybe_mkdir "${TARGET}/schemas"
   maybe_mkdir "${TARGET}/schemas/ecl"
   maybe_mkdir "${TARGET}/schemas/ecl/contracts"
-  maybe_mkdir "${TARGET}/hosts"
-  maybe_mkdir "${TARGET}/evals/canary"
   cleanup_legacy_v1_2 "${TARGET}"
 fi
 
@@ -296,6 +349,7 @@ copy_file() {
   if [[ "$DRY_RUN" != "true" ]]; then
     local chk; chk=$(sha256_file "${dst}")
     FILES_WRITTEN+=("{\"path\":\"${dst}\",\"sha256\":\"${chk}\",\"role\":\"${role}\",\"mode\":\"created\"}")
+    FILES_WRITTEN_PATHS+=("${dst}")
   fi
 }
 
@@ -332,12 +386,14 @@ wire_skill() {
   cp "${src}" "${dst_src}"
   local src_chk; src_chk=$(sha256_file "${dst_src}")
   FILES_WRITTEN+=("{\"path\":\"${dst_src}\",\"sha256\":\"${src_chk}\",\"role\":\"skill\",\"mode\":\"created\"}")
+  FILES_WRITTEN_PATHS+=("${dst_src}")
 
   if printf '%s\n' "${HOSTS_ARRAY[@]:-}" | grep -q 'claude-code'; then
     mkdir -p "$(dirname "${dst_vendor}")"
     cp "${src}" "${dst_vendor}"
     local vendor_chk; vendor_chk=$(sha256_file "${dst_vendor}")
     FILES_WRITTEN+=("{\"path\":\"${dst_vendor}\",\"sha256\":\"${vendor_chk}\",\"role\":\"skill\",\"mode\":\"created\"}")
+    FILES_WRITTEN_PATHS+=("${dst_vendor}")
     SKILLS_WRITTEN+=("{\"name\":\"${skill}\",\"source_path\":\".eidolons/${EIDOLON_SLUG}/skills/${skill}.md\",\"source_sha256\":\"${src_chk}\",\"vendor_path\":\".claude/skills/${EIDOLON_SLUG}-${skill}/SKILL.md\",\"vendor_sha256\":\"${vendor_chk}\"}")
   else
     SKILLS_WRITTEN+=("{\"name\":\"${skill}\",\"source_path\":\".eidolons/${EIDOLON_SLUG}/skills/${skill}.md\",\"source_sha256\":\"${src_chk}\"}")
@@ -345,14 +401,9 @@ wire_skill() {
 }
 
 if [[ "$MANIFEST_ONLY" != "true" ]]; then
-  copy_file "agent.md"            "${TARGET}/agent.md"            "entry-point"
-  copy_file "SPEC.md"             "${TARGET}/SPEC.md"             "spec"
-  copy_file "AGENTS.md"           "${TARGET}/AGENTS.md"           "entry-point"
-  copy_file "CLAUDE.md"           "${TARGET}/CLAUDE.md"           "dispatch"
-  copy_file "DESIGN-RATIONALE.md" "${TARGET}/DESIGN-RATIONALE.md" "other"
-  copy_file "README.md"           "${TARGET}/README.md"           "other"
-  copy_file "CHANGELOG.md"        "${TARGET}/CHANGELOG.md"        "other"
-  copy_file "ECL_VERSION"         "${TARGET}/ECL_VERSION"         "other"
+  copy_file "agent.md"    "${TARGET}/agent.md"    "agent-profile"
+  copy_file "SPEC.md"     "${TARGET}/SPEC.md"     "spec"
+  copy_file "ECL_VERSION" "${TARGET}/ECL_VERSION" "ecl-version"
 
   for phase in verify isolate graph intervene learn; do
     wire_skill "${phase}"
@@ -362,33 +413,11 @@ if [[ "$MANIFEST_ONLY" != "true" ]]; then
     copy_file "templates/${tpl}.md" "${TARGET}/templates/${tpl}.md" "template"
   done
 
-  for tpl_env in root-cause-report escalation-brief; do
-    copy_file "templates/${tpl_env}.envelope.json" "${TARGET}/templates/${tpl_env}.envelope.json" "template"
-  done
-
   for schema in reproduction intervention-log root-cause-report; do
     copy_file "schemas/${schema}.v1.json" "${TARGET}/schemas/${schema}.v1.json" "other"
   done
 
-  for ecl_schema in envelope.v1 _base-profile.v1 root-cause-report.v1; do
-    copy_file "schemas/ecl/${ecl_schema}.json" "${TARGET}/schemas/ecl/${ecl_schema}.json" "other"
-  done
-
-  for ecl_contract in vigil-to-apivr vigil-to-spectra vigil-to-idg apivr-to-vigil; do
-    copy_file "schemas/ecl/contracts/${ecl_contract}.yaml" "${TARGET}/schemas/ecl/contracts/${ecl_contract}.yaml" "other"
-  done
-
-  for host in claude-code cursor copilot opencode; do
-    [[ -f "${SCRIPT_DIR}/hosts/${host}.md" ]] && \
-      copy_file "hosts/${host}.md" "${TARGET}/hosts/${host}.md" "dispatch"
-  done
-
-  if [[ -d "${SCRIPT_DIR}/evals/canary" ]]; then
-    for f in "${SCRIPT_DIR}"/evals/canary/*.md; do
-      [[ -e "$f" ]] || continue
-      copy_file "evals/canary/$(basename "$f")" "${TARGET}/evals/canary/$(basename "$f")" "other"
-    done
-  fi
+  canonical_inventory_sweep "${TARGET}"
 fi
 
 # --------------------------------------------------------------------------- #
@@ -489,24 +518,15 @@ if hosts_include "claude-code" && [[ "$MANIFEST_ONLY" != "true" ]]; then
   AGENT_CONTENT="---
 name: vigil
 description: Forensic debugger for code failures resistant to normal repair. Use when a test fails in a non-obvious way, when APIVR-Δ has exhausted its Reflect loop, for heisenbugs, compound failures, or regressions of unclear origin. Runs the five-phase VIGIL pipeline (Verify → Isolate → Graph → Intervene → Learn), emits evidence-anchored root-cause attribution.
-when_to_use: After APIVR-Δ escalation; post-hoc failure analysis; heisenbugs and flaky tests; compound failures spanning multiple modules; any \"why did this fail\" question where log-only speculation would be inadmissible.
-tools: Read, Grep, Glob, Bash(git log:*), Bash(git bisect:*), Bash(git show:*), Bash(rg:*)
-methodology: VIGIL
-methodology_version: \"1.0\"
-role: Forensic debugger — root-cause attribution
-handoffs: [apivr, spectra, idg, forge]
-authority: ${MODE}
+model: opus
 ---
 
-# VIGIL — Forensic Debugger Agent
+You are VIGIL. Read these two files in order at session start:
 
-You execute the VIGIL methodology: **V**erify → **I**solate → **G**raph →
-**I**ntervene → **L**earn. You attribute root causes under evidence
-discipline. You do NOT plan, implement, or chronicle — you decide what
-went wrong. Full spec: \`${TARGET}/SPEC.md\`.
+1. \`./.eidolons/vigil/agent.md\` — always-loaded P0 rules.
+2. \`./.eidolons/vigil/SPEC.md\` — deep on-demand methodology spec.
 
-Authority: **${MODE}**. See \`${TARGET}/agent.md\` for P0 invariants
-and phase-skill triggers."
+Skills live at \`./.eidolons/vigil/skills/<skill>.md\` (load on demand)."
 
   if [[ "$DRY_RUN" != "true" ]]; then
     printf "%s\n" "$AGENT_CONTENT" > ".claude/agents/vigil.md"
@@ -566,8 +586,11 @@ mode: primary
 description: "VIGIL v${EIDOLON_VERSION} — forensic debugger, V→I→G→I→L, authority ${MODE}"
 ---
 
-You are the VIGIL forensic debugger. Full rules: \`${TARGET}/AGENTS.md\`.
-Always-loaded profile: \`${TARGET}/agent.md\`. Full spec: \`${TARGET}/SPEC.md\`.
+You are the VIGIL forensic debugger. Read these two files in order at session start:
+
+1. \`${TARGET}/agent.md\` — always-loaded P0 rules.
+2. \`${TARGET}/SPEC.md\` — deep on-demand methodology spec.
+
 Phase skills: \`${TARGET}/skills/<phase>.md\` — load per phase.
 Authority: ${MODE}.
 EOF
@@ -599,14 +622,14 @@ You execute the VIGIL methodology: **V**erify → **I**solate → **G**raph →
 discipline. You do NOT plan, implement, or chronicle — you decide what
 went wrong.
 
-When Codex delegates to this subagent, treat the methodology described
-in \`${TARGET}/agent.md\` as authoritative. The full ruleset lives in
-\`${TARGET}/AGENTS.md\` and the canonical specification in
-\`${TARGET}/SPEC.md\`. Phase skills under
-\`${TARGET}/skills/<phase>.md\` load per phase.
+Read these two files in order at session start:
 
-Authority: **${MODE}**. See \`${TARGET}/agent.md\` for P0 invariants
-and phase-skill triggers."
+1. \`${TARGET}/agent.md\` — always-loaded P0 rules.
+2. \`${TARGET}/SPEC.md\` — deep on-demand methodology spec.
+
+Phase skills under \`${TARGET}/skills/<phase>.md\` load per phase.
+
+Authority: **${MODE}**."
 
   if [[ ! -f "$CODEX_AGENT" || "$FORCE" == "true" ]]; then
     if [[ "$DRY_RUN" == "true" ]]; then
@@ -721,7 +744,8 @@ if [[ "$DRY_RUN" != "true" ]]; then
   "eidolon": "${EIDOLON_NAME}",
   "version": "${EIDOLON_VERSION}",
   "methodology": "${METHODOLOGY}",
-  "eiis_version": "1.3",
+  "eiis_version": "1.4",
+  "canonical_inventory_strict": true,
   "installed_at": "${INSTALLED_AT}",
   "target": "${TARGET}",
   "spec_file": ".eidolons/${EIDOLON_SLUG}/SPEC.md",
