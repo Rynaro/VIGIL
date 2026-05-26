@@ -7,6 +7,16 @@ Version numbers follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ---
 
+## [1.2.1] — 2026-05-26
+
+### Fixed
+
+- `install.sh` now sweeps legacy v1.2-era artefacts on upgrade: removes stale
+  `<TARGET>/VIGIL.md` and any `<TARGET>/skills/{graph,intervene,isolate,learn,verify}/`
+  subdir trees left behind by pre-v1.3 installs. Fresh installs are unaffected.
+
+---
+
 ## [1.2.0] — 2026-05-25 — EIIS v1.3: SPEC.md + flat skills + vendor .claude/skills
 
 ### Changed
