@@ -10,6 +10,18 @@ METHODOLOGY="VIGIL"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # --------------------------------------------------------------------------- #
+# Legacy v1.2-era artefacts swept on upgrade (Strategy A — hardcoded list)
+# --------------------------------------------------------------------------- #
+LEGACY_SPEC_FILES=( "VIGIL.md" )
+LEGACY_SKILL_DIRS=( \
+  "graph" \
+  "intervene" \
+  "isolate" \
+  "learn" \
+  "verify" \
+)
+
+# --------------------------------------------------------------------------- #
 # Defaults
 # --------------------------------------------------------------------------- #
 TARGET="./.eidolons/${EIDOLON_NAME}"
@@ -117,6 +129,46 @@ do_action() {
   else
     "$@"
   fi
+}
+
+# cleanup_legacy_v1_2 <target>
+#
+# Sweep legacy v1.2-era artefacts left behind by prior installs.
+# Called exactly once, early in the install sequence, BEFORE any new content
+# is written under <target>. Idempotent: no-op when no legacy file exists.
+#
+# Reads two top-of-file arrays:
+#   LEGACY_SPEC_FILES  — basenames to rm -f at "<target>/<basename>"
+#   LEGACY_SKILL_DIRS  — skill names to rm -rf at "<target>/skills/<name>"
+#
+# Both arrays are declared per-Eidolon and MAY be empty (in which case
+# the corresponding loop is a no-op). Never reads/writes outside <target>.
+cleanup_legacy_v1_2() {
+  local target="$1"
+  local legacy
+  local legacy_skill_dir
+
+  if [ -z "${target}" ] || [ ! -d "${target}" ]; then
+    return 0
+  fi
+
+  # Sweep legacy spec filenames (e.g. VIGIL.md)
+  for legacy in "${LEGACY_SPEC_FILES[@]}"; do
+    if [ -n "${legacy}" ] && [ -f "${target}/${legacy}" ]; then
+      rm -f "${target}/${legacy}"
+      warn "swept legacy spec file: ${target}/${legacy}"
+    fi
+  done
+
+  # Sweep legacy subdir-style skills (e.g. skills/graph/SKILL.md)
+  for legacy_skill_dir in "${LEGACY_SKILL_DIRS[@]}"; do
+    if [ -n "${legacy_skill_dir}" ] && [ -d "${target}/skills/${legacy_skill_dir}" ]; then
+      rm -rf "${target}/skills/${legacy_skill_dir}"
+      warn "swept legacy skill subdir: ${target}/skills/${legacy_skill_dir}"
+    fi
+  done
+
+  return 0
 }
 
 sha256_file() {
