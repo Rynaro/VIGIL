@@ -7,6 +7,12 @@ Version numbers follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ---
 
+## [1.3.2] — 2026-05-27
+
+feat(canary): author canonical evals/canary-missions.md in v1.13.0 DSL (smoke-default + root-cause-attribution); legacy evals/canary/missions.md preserved as historical reference
+
+---
+
 ## [1.3.1] — 2026-05-26 — SPEC.md text sweep: retire local ECL file refs
 
 ### Fixed
