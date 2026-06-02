@@ -7,6 +7,18 @@ Version numbers follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ---
 
+## [1.4.1] — 2026-06-02 — agent.md token-budget fix
+
+### Fixed
+
+- **`agent.md` exceeded the ≤1000-token P0 budget (1154 est. tokens), breaking
+  `install.sh --non-interactive` with exit 4.** The v1.4.0 CRYSTALIUM "Memory
+  pre-flight" block was inlined verbatim into the always-loaded profile, on top
+  of an already-tight 933-token baseline. Condensed the memory pre-flight note
+  to a pointer (full recall signature + protocol already live in `SPEC.md §9`)
+  and tightened the intro line. Now 997 est. tokens. No change to the memory
+  protocol itself — only the always-loaded surface.
+
 ## [1.4.0] — 2026-06-02 — CRYSTALIUM memory pipeline
 
 ### Added

@@ -381,4 +381,4 @@ ECL schemas and contracts are maintained upstream at [Rynaro/eidolons-ecl](https
 
 ---
 
-*VIGIL v1.4.0 — Methodology specification*
+*VIGIL v1.4.1 — Methodology specification*
