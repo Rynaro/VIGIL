@@ -7,6 +7,44 @@ Version numbers follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ---
 
+## [1.4.0] — 2026-06-02 — CRYSTALIUM memory pipeline
+
+### Added
+
+- **Memory pre-flight recall** (`agent.md`, `skills/verify.md`, `skills/isolate.md`):
+  `mcp__crystalium__recall` fires at Phase V entry (and cross-referenced in
+  Phase I) with `layers=["semantic","episodic","procedural"]`, `k=5`. Prior
+  procedural debugging patterns and semantic root-cause classes surface before
+  hypothesis generation, shortcutting isolation for recurring failure shapes.
+- **Ingest spine** (`skills/learn.md` §"CRYSTALIUM Memory" Step C-1): after
+  the ECL envelope is emitted, `mcp__crystalium__ingest(envelope, payload=
+  <root-cause-report>)` persists the handoff at T1. `from.eidolon=vigil`
+  drives tier derivation; `integrity.value` stored as `provenance.content_hash`.
+- **Learned-pattern commit — VIGIL extension** (`skills/learn.md` Step C-2):
+  for each corroborated debugging pattern distilled in the Learn phase, call
+  `mcp__crystalium__commit(layer=procedural OR semantic, payload=<pattern>,
+  provenance={author_agent:"vigil"})`. Feeds Dream→semantic promotion gate.
+  `author_agent` MUST be `"vigil"`.
+- **Session end** (`skills/learn.md` Step C-3): `mcp__crystalium__session_end()`
+  triggers Dream consolidation once per mission completion.
+- **Graceful-skip** on all CRYSTALIUM calls: VIGIL proceeds without memory when
+  CRYSTALIUM is not installed; EIIS standalone conformance preserved.
+- **SPEC.md §9 "Memory Protocol (CRYSTALIUM)"**: concise spec section covering
+  recall pre-flight, ingest spine, learned-pattern commit (procedural + semantic),
+  session end, and graceful-skip contract.
+- **Eval: memory-round-trip** (`evals/canary-missions.md`): asserts recall fires
+  at Verify, ingest fires at Learn with `author_agent=vigil` at T1, a
+  learned-pattern commit is emitted, and CRYSTALIUM-absent path degrades
+  gracefully.
+
+### Changed
+
+- `install.sh` `EIDOLON_VERSION` bumped `1.3.2` → `1.4.0`.
+- `agent.md` `version` bumped `1.1.0` → `1.4.0`.
+- ECL_VERSION (`2.0`) and EIIS_VERSION (`1.4`) unchanged.
+
+---
+
 ## [1.3.2] — 2026-05-27
 
 feat(canary): author canonical evals/canary-missions.md in v1.13.0 DSL (smoke-default + root-cause-attribution); legacy evals/canary/missions.md preserved as historical reference

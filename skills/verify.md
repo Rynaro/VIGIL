@@ -12,6 +12,25 @@ phase: V
 
 **Load when:** starting any mission. Unload when `reproduction.md` is schema-valid and `DETERMINISM_VERDICT ≠ intermittent`.
 
+> **Memory pre-flight:** `recall` MUST have fired in Phase V (see `agent.md`
+> §"Memory pre-flight") before any reproduction work begins. If it hasn't —
+> e.g. this skill was loaded directly — call it now:
+>
+> ```
+> mcp__crystalium__recall(
+>   scope  = { project: <cwd-project>, agent_class_visibility: "vigil" },
+>   query  = <failure signature — error class, key frames, command>,
+>   k      = 5,
+>   layers = ["semantic", "episodic", "procedural"]
+> )
+> ```
+>
+> Prioritize **procedural** hits (prior isolation techniques for this error
+> class) and **semantic** hits (known root-cause categories matching the
+> signature). Fold relevant results into hypothesis generation before
+> Step 1. If `mcp__crystalium__*` tools are unavailable, proceed without
+> memory — never hard-fail.
+
 ---
 
 ## Contract

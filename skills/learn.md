@@ -277,6 +277,74 @@ On budget exhaustion (5 interventions, no FLIPPED result), the escalation-brief 
 
 Trace the emit event to `.eidolons/.trace/<thread_id>.jsonl` as above, with `performative: "ESCALATE"`.
 
+## CRYSTALIUM Memory — ingest, learned-pattern commit, session end
+
+After the ECL envelope(s) are emitted (Steps 1–5 above), persist the handoff
+and any reusable debugging lessons to CRYSTALIUM.
+
+### Step C-1 — Ingest (primary persist path)
+
+```
+mcp__crystalium__ingest(
+  envelope = <the validated root-cause-report.envelope.json contents>,
+  payload  = <root-cause-report.md contents>
+)
+```
+
+This records the root-cause-report at T1 with full ECL provenance
+(`from.eidolon=vigil` drives tier derivation; `integrity.value` is stored as
+`provenance.content_hash`). The authority flag (I-6) governs codebase writes,
+not memory substrate access — calling CRYSTALIUM tools is explicitly allowed
+under all authority modes.
+
+### Step C-2 — Learned-pattern commit (VIGIL extension)
+
+The Learn phase distils reusable lessons. For each corroborated debugging
+pattern surfaced during this mission — a root-cause category, an isolation
+technique that proved effective, or an intervention shape that reliably
+flips this class of failure — commit it directly:
+
+```
+mcp__crystalium__commit(
+  layer      = "procedural",    # use "semantic" for root-cause class knowledge
+  payload    = <the learned pattern — concise, matchable on future recall>,
+  provenance = { author_agent: "vigil", mission_id: <MISSION-ID> }
+)
+```
+
+**Layer guidance:**
+
+| Content | Layer |
+|---------|-------|
+| Reusable isolation / intervention technique for a failure class | `procedural` |
+| Categorical root-cause knowledge (what pattern causes this signature) | `semantic` |
+| Raw mid-cycle observation not yet generalised | `episodic` |
+
+`author_agent` MUST be `"vigil"` on every direct commit. These entries feed
+Dream's episodic→semantic promotion gate (corroboration threshold ≥2 across
+missions).
+
+Commit only patterns corroborated by the counterfactual flip. Speculative
+patterns MUST NOT be committed here — record them in `failure-signature.yaml`
+for future missions to corroborate.
+
+### Step C-3 — Session end
+
+After ingest and any pattern commits complete, call:
+
+```
+mcp__crystalium__session_end()
+```
+
+This triggers Dream consolidation asynchronously. Call once per mission
+completion.
+
+**Graceful skip:** if `mcp__crystalium__*` tools are unavailable (CRYSTALIUM
+not installed), proceed without memory — skip Steps C-1 through C-3 and mark
+Phase L complete normally. Never hard-fail on absent CRYSTALIUM tools.
+
+---
+
 ## Authority-Specific Output Rules
 
 | Authority | What VIGIL emits |

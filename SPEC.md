@@ -332,11 +332,46 @@ Canary dataset: `evals/canary/` — includes deterministic regressions, heisenbu
 
 ---
 
-## 9. Versioning Policy
+## 9. Memory Protocol (CRYSTALIUM)
+
+VIGIL integrates with CRYSTALIUM for persistent memory across missions. Full
+layer × tier matrix: `eidolons/methodology/cortex/memory-protocol.md`.
+
+**Recall pre-flight (Phase V / Isolate entry):** before any reproduction work,
+call `mcp__crystalium__recall` with the failure signature as query,
+`layers=["semantic","episodic","procedural"]`, `k=5`, and
+`agent_class_visibility:"vigil"`. Prior procedural patterns (how a similar
+failure class was isolated) and semantic root-cause knowledge (what causes this
+signature) surface here and fold into hypothesis generation. See `agent.md`
+§"Memory pre-flight" and `skills/verify.md` for the precise call shape.
+
+**Ingest spine (Phase L):** after the ECL envelope is emitted, call
+`mcp__crystalium__ingest(envelope, payload=<root-cause-report>)` to persist
+the handoff at T1. `from.eidolon=vigil` drives tier derivation. See
+`skills/learn.md §"CRYSTALIUM Memory"`.
+
+**Learned-pattern commit (VIGIL extension):** also in Phase L, for each
+corroborated debugging pattern surfaced during the mission, call
+`mcp__crystalium__commit(layer=procedural OR semantic, payload=<pattern>,
+provenance={author_agent:"vigil"})`. Procedural commits capture reusable
+isolation / intervention techniques; semantic commits capture categorical
+root-cause knowledge. Both feed the Dream→semantic promotion gate. `author_agent`
+MUST be `"vigil"` on every direct commit.
+
+**Session end:** call `mcp__crystalium__session_end()` once per mission
+completion to trigger Dream consolidation asynchronously.
+
+**Graceful skip:** if `mcp__crystalium__*` tools are unavailable, VIGIL
+proceeds without memory — never hard-fails. EIIS standalone conformance is
+preserved.
+
+---
+
+## 10. Versioning Policy
 
 `SPEC.md` is the authoritative spec. Breaking changes to phase contracts or JSON schemas require a minor-version bump (v1.1, v1.2…). Major bumps reserved for invariant changes. Implementations declare `methodology: VIGIL` and `methodology_version: 1.0` in their `agent.md` frontmatter.
 
-## 10. ECL Compatibility
+## 11. ECL Compatibility
 
 VIGIL v1.1 emits ECL v1.0 envelopes by default on all inter-Eidolon hand-offs. The `ECL_VERSION` file in the repository root declares the targeted spec version (`1.0`). The nexus reads this during `eidolons sync` and warns on mismatches exceeding one minor (per ECL §7.2).
 
@@ -346,4 +381,4 @@ ECL schemas and contracts are maintained upstream at [Rynaro/eidolons-ecl](https
 
 ---
 
-*VIGIL v1.3.1 — Methodology specification*
+*VIGIL v1.4.0 — Methodology specification*
