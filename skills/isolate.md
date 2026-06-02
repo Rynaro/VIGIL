@@ -12,6 +12,12 @@ phase: I
 
 **Load when:** `reproduction.md` is schema-valid and stable. Unload when `fault-surface.md` has ≤8 candidates with evidence anchors.
 
+> **Memory check:** if `recall` fired in Phase V, its results are already in
+> context — consult them when building the initial suspect set. Procedural
+> memories from prior missions on similar error classes can shortcut Source 2
+> (recent churn) and Source 3 (scope bounds) below. If `mcp__crystalium__*`
+> tools are unavailable, proceed without memory — never hard-fail.
+
 ---
 
 ## Contract

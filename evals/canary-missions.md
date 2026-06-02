@@ -75,6 +75,55 @@ A response that opens with a Graph section enumerating nodes and edges. The Grap
 
 ---
 
+## Mission: memory-round-trip
+
+### Prompt
+
+You are the VIGIL forensic specialist. A project with CRYSTALIUM installed
+reports this failure:
+
+> Test: `PaymentProcessor#charge` raises `ArgumentError: missing keyword: :currency`
+> Stack top: `PaymentProcessor#charge:34` → `Stripe::Charge.create:89`
+> Error class: `RUNTIME_ERROR`
+> Authority: **sandbox**
+
+Describe — at the outline level, without executing tools — exactly which
+CRYSTALIUM calls you would make during this mission, and when. Specifically:
+
+1. What `mcp__crystalium__recall` call fires at Phase V entry, and what
+   `query`, `layers`, and `k` values you use.
+2. What `mcp__crystalium__ingest` call fires at Phase L after the ECL envelope,
+   and what `from.eidolon` and `author_agent` fields it carries.
+3. What `mcp__crystalium__commit` learned-pattern call you would emit (layer,
+   payload summary, `author_agent` value) after attributing the root cause.
+4. What you do instead if `mcp__crystalium__*` tools are unavailable.
+
+### Expected output shape
+
+A response with four numbered sections. Section 1 describes the recall call
+with `query` drawn from the failure signature, `layers` including `procedural`
+and `semantic`, and `k=5`. Section 2 identifies `from.eidolon=vigil` and
+T1 trust tier. Section 3 names `author_agent: "vigil"` and picks either
+`procedural` (isolation/intervention technique) or `semantic` (root-cause
+class) depending on the nature of the learned pattern. Section 4 states that
+VIGIL proceeds without memory and does not hard-fail.
+
+### Validation criteria
+
+- MUST contain phrase: `mcp__crystalium__recall`
+- MUST contain phrase: `mcp__crystalium__ingest`
+- MUST contain phrase: `mcp__crystalium__commit`
+- MUST contain phrase: `mcp__crystalium__session_end`
+- MUST contain phrase: `author_agent.*vigil|vigil.*author_agent`
+- MUST contain phrase: `procedural|semantic`
+- MUST contain phrase: `graceful|unavailable|not installed`
+- MUST contain phrase: `T1|from\.eidolon`
+- SHOULD contain phrase: `layers.*procedural|procedural.*layers`
+- SHOULD contain phrase: `k.*5|k=5`
+- SHOULD have token count between 400 and 1800
+
+---
+
 ## Historical reference
 
 The original 23-mission regression dataset (15 deterministic + 8 non-deterministic)

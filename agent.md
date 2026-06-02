@@ -1,6 +1,6 @@
 ---
 name: vigil
-version: 1.1.0
+version: 1.4.0
 methodology: VIGIL
 methodology_version: "1.0"
 description: "Forensic specialist. Post-mortem root-cause attribution for code failures, grounded in reproduction, IDG analysis, and counterfactual intervention."
@@ -55,6 +55,38 @@ V ──▶ I ──▶ G ──▶ I ──▶ L ──▶ EMIT (pass)
 
 Methodology is identical across modes. Only authority and upstream artifact differ.
 
+## Memory pre-flight (Phase V — mission intake)
+
+Before any phase work begins, call CRYSTALIUM recall to surface relevant prior
+context (prior debugging patterns, known root-cause classes, and past failure
+signatures for the symptom under investigation):
+
+```
+mcp__crystalium__recall(
+  scope    = { project: <cwd-project>, agent_class_visibility: "vigil" },
+  query    = <the failure / symptom under investigation>,
+  k        = 5,
+  layers   = ["semantic", "episodic", "procedural"]
+)
+```
+
+VIGIL especially benefits from recalling **procedural** prior debugging patterns
+(how a class of failure was isolated before) and **semantic** known root-cause
+classes (which patterns reliably flip this error signature).
+
+Fold relevant hits into mission context before entering Phase V. Calling
+`mcp__crystalium__*` tools does not violate the flag-gated authority rule
+(I-6) — authority governs codebase writes, not memory substrate access.
+
+**Graceful skip:** if `mcp__crystalium__*` tools are unavailable (CRYSTALIUM
+not installed), proceed without memory — never hard-fail. VIGIL is
+EIIS-standalone-conformant and works without CRYSTALIUM.
+
+See `skills/verify.md` for the corresponding cross-reference at phase V entry.
+See `SPEC.md §9` for the full memory protocol summary.
+
+---
+
 ## Skill Loading
 
 Load skills on-demand. Do NOT load all skills upfront.
@@ -101,4 +133,4 @@ VIGIL inherits team markers and adds domain-specific ones:
 
 ---
 
-*VIGIL v1.1.0 — Verify · Isolate · Graph · Intervene · Learn*
+*VIGIL v1.4.0 — Verify · Isolate · Graph · Intervene · Learn*
