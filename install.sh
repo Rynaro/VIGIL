@@ -405,7 +405,7 @@ if [[ "$MANIFEST_ONLY" != "true" ]]; then
   copy_file "SPEC.md"     "${TARGET}/SPEC.md"     "spec"
   copy_file "ECL_VERSION" "${TARGET}/ECL_VERSION" "ecl-version"
 
-  for phase in verify isolate graph intervene learn; do
+  for phase in verify isolate graph intervene learn verify-incoming; do
     wire_skill "${phase}"
   done
 
