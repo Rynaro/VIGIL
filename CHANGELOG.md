@@ -7,6 +7,24 @@ Version numbers follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ---
 
+## [Unreleased]
+
+### Added
+
+- **`skills/verify-incoming.md` — blocking, symmetric ECL §6.2.2 receiver gate.**
+  Replaces the old warn-only posture: VIGIL now REFUSES to process any inbound
+  artefact whose SHA-256 integrity has not been verified and passed by the
+  orchestrator (`eidolons verify-envelope --block`). The gate is symmetric —
+  all six roster Eidolons ship identical semantics; the only per-Eidolon
+  variation is the inbound-edge table (`apivr`, `atlas`, `spectra`, `idg`,
+  `forge` → `vigil`). Receiver needs only `Read` (consults the trace) so the
+  gate works even on tool-restricted hosts.
+- **`tests/verify-incoming.bats` + `tests/helpers.bash`** — bats suite that
+  asserts S1 (BLOCKING posture declared), S2 (no warn-only regression), and
+  S3 (install.sh exits 0 and manifests `skills/verify-incoming.md`).
+
+---
+
 ## [1.4.1] — 2026-06-02 — agent.md token-budget fix
 
 ### Fixed
