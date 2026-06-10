@@ -7,6 +7,21 @@ Version numbers follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ---
 
+## [1.6.1] — 2026-06-10 — explicit tool allowlist for reproduction-gated Verify phase
+
+### Changed
+
+- **`.claude/agents/vigil.md` + `install.sh` claude-code heredoc:** added explicit `tools:` frontmatter line:
+  `Read, Grep, Glob, Bash(git:*), Bash(make:*), Bash(bats:*), Bash(rspec:*), Bash(jest:*), Bash(pytest:*), Bash(go test:*), Bash(cargo:*), Bash(shasum:*), Bash(wc:*)`
+
+  Rationale: reproduction-gated attribution (P0 I-1) requires running the project's test suite to obtain ≥2 deterministic failure runs. Without an explicit allowlist the MCP wiring left VIGIL crystalium-only, blocking Verify phase entirely on tool-restricted hosts. Counterfactual interventions use the pluggable sandbox adapter (test-runner prefixes), not file mutation — Write/Edit are intentionally excluded (`write never inferred`, P0 I-6). `shasum`/`wc` support ECL envelope integrity computation.
+
+  No `mcp__crystalium__*` entries here — nexus wiring appends MCP globs autonomously via the grant driver.
+
+- Version stamps bumped 1.6.0 → 1.6.1: `install.sh`, `agent.md`, `AGENTS.md`, `SPEC.md`, `README.md`, `examples/install.manifest.json`, `templates/*.envelope.json`.
+
+---
+
 ## [1.6.0] — 2026-06-10 — version-stamp hygiene + canonical skill template
 
 ### Changed

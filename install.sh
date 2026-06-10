@@ -5,7 +5,7 @@ set -euo pipefail
 
 EIDOLON_NAME="vigil"
 EIDOLON_SLUG="vigil"
-EIDOLON_VERSION="1.6.0"
+EIDOLON_VERSION="1.6.1"
 METHODOLOGY="VIGIL"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -519,6 +519,7 @@ if hosts_include "claude-code" && [[ "$MANIFEST_ONLY" != "true" ]]; then
 name: vigil
 description: Forensic debugger for code failures resistant to normal repair. Use when a test fails in a non-obvious way, when APIVR-Δ has exhausted its Reflect loop, for heisenbugs, compound failures, or regressions of unclear origin. Runs the five-phase VIGIL pipeline (Verify → Isolate → Graph → Intervene → Learn), emits evidence-anchored root-cause attribution.
 model: opus
+tools: Read, Grep, Glob, Bash(git:*), Bash(make:*), Bash(bats:*), Bash(rspec:*), Bash(jest:*), Bash(pytest:*), Bash(go test:*), Bash(cargo:*), Bash(shasum:*), Bash(wc:*)
 ---
 
 You are VIGIL. Read these two files in order at session start:

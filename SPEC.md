@@ -375,7 +375,7 @@ preserved.
 
 VIGIL v1.6 emits ECL v1.0 envelopes by default on all inter-Eidolon hand-offs. The `ECL_VERSION` file in the repository root declares the targeted spec version (`1.0`). The nexus reads this during `eidolons sync` and warns on mismatches exceeding one minor (per ECL §7.2).
 
-Integrity method: `sha256` for all v1.6.0 edges. `hmac-sha256` (RECOMMENDED for `trust_level: high` edges per ECL §6.3) is deferred to a future release pending `ECL_HMAC_KEY` distribution support in the nexus (D1). The choice is forwards-compatible: VIGIL v1.2 can promote to `hmac-sha256` without a SemVer break in any peer.
+Integrity method: `sha256` for all v1.6.1 edges. `hmac-sha256` (RECOMMENDED for `trust_level: high` edges per ECL §6.3) is deferred to a future release pending `ECL_HMAC_KEY` distribution support in the nexus (D1). The choice is forwards-compatible: VIGIL v1.2 can promote to `hmac-sha256` without a SemVer break in any peer.
 
 ECL schemas and contracts are maintained upstream at [Rynaro/eidolons-ecl](https://github.com/Rynaro/eidolons-ecl); they are not vendored into the install target. Implementors requiring offline validation should fetch `envelope.v1.json` and `contracts/apivr-to-vigil.yaml` directly from that repository.
 
