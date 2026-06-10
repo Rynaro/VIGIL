@@ -126,4 +126,4 @@ Cursor: Loading agents/apivr/agent.md
 
 ---
 
-*VIGIL v1.0.1 — Cursor host wiring*
+*VIGIL — Cursor host wiring*

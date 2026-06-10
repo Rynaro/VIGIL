@@ -78,4 +78,4 @@ VIGIL is host-agnostic. See `hosts/` for wiring notes per host:
 
 ---
 
-*VIGIL v1.2.0 — see `SPEC.md` for the full specification*
+*VIGIL — see `SPEC.md` for the full specification*

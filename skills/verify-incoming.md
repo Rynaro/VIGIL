@@ -1,11 +1,18 @@
 ---
 name: vigil-verify-incoming
-description: "Load when reading any upstream artefact handed off to VIGIL that carries a sibling .envelope.json. BLOCKING per ECL §6.2.2: the orchestrator MUST have verified the envelope's SHA-256 (eidolons verify-envelope --block / eidolons run --verify) and recorded a verify_pass before dispatch. If no verify_pass exists for the message_id, or a verify_fail is present, REFUSE to process the payload and hand back to the orchestrator. Symmetric receiver gate — every Eidolon enforces it identically."
-methodology: VIGIL
-methodology_version: "1.0"
+description: Blocking, symmetric receiver-side integrity gate for inbound ECL hand-offs. Enforces ECL §6.2.2: REFUSES to process any upstream artefact whose SHA-256 envelope has not been verified and passed by the orchestrator; hands back to the orchestrator on failure. Use when reading any upstream artefact handed off to VIGIL that carries a sibling .envelope.json.
+metadata:
+  methodology: VIGIL
+  phase: pre-V
 ---
 
 # Verify-Incoming Skill — VIGIL (blocking, symmetric)
+
+## When to use
+
+Load when reading any upstream artefact handed off to VIGIL that carries a sibling `.envelope.json`. Do NOT skip this gate for any inbound ECL hand-off edge.
+
+---
 
 Receiver-side integrity gate for inbound ECL hand-offs. When an upstream
 artefact arrives with a sibling `.envelope.json`, VIGIL MUST NOT process the
@@ -150,12 +157,12 @@ envelope is unparseable, use `unknown`.
 
 **verify_pass:**
 ```json
-{"ts":"<RFC3339>","event":"verify_pass","message_id":"<uuid>","thread_id":"<uuid>","from":"<eidolon>@<version>","to":"vigil@1.0","performative":"<performative>","integrity_method":"sha256"}
+{"ts":"<RFC3339>","event":"verify_pass","message_id":"<uuid>","thread_id":"<uuid>","from":"<eidolon>@<version>","to":"vigil@<version>","performative":"<performative>","integrity_method":"sha256"}
 ```
 
 **verify_fail:**
 ```json
-{"ts":"<RFC3339>","event":"verify_fail","message_id":"<uuid>","thread_id":"<uuid>","from":"<eidolon>@<version>","to":"vigil@1.0","integrity_method":"sha256","verify_failure_code":"<CODE>","decision":"refused"}
+{"ts":"<RFC3339>","event":"verify_fail","message_id":"<uuid>","thread_id":"<uuid>","from":"<eidolon>@<version>","to":"vigil@<version>","integrity_method":"sha256","verify_failure_code":"<CODE>","decision":"refused"}
 ```
 
 ---

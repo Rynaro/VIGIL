@@ -84,7 +84,7 @@ All structured artifacts validate against schemas in `schemas/`:
 
 ## ECL Emission Contract
 
-VIGIL v1.1.0 emits ECL v1.0 envelopes on all inter-Eidolon handoffs. The five-line emit invariant:
+VIGIL v1.6.0 emits ECL v1.0 envelopes on all inter-Eidolon handoffs. The five-line emit invariant:
 
 1. **Compute SHA-256** of the payload bytes (`root-cause-report.md` or `escalation-brief.md`).
 2. **Write the envelope sidecar** (`<basename>.envelope.json` or `<basename>.envelope.<recipient>.json` for fan-out) per `templates/root-cause-report.envelope.json` or `templates/escalation-brief.envelope.json`.
@@ -131,4 +131,4 @@ First 8 align with APIVR-Δ's Reflect taxonomy. Last 3 (`HEISENBUG`, `COMPOUND`,
 
 ---
 
-*VIGIL v1.1.0 — Verify · Isolate · Graph · Intervene · Learn*
+*VIGIL — Verify · Isolate · Graph · Intervene · Learn*

@@ -1,9 +1,10 @@
 {
   "eidolon": "vigil",
-  "version": "1.3.0",
+  "version": "1.6.0",
   "methodology": "VIGIL",
+  "eiis_version": "1.4",
   "canonical_inventory_strict": true,
-  "installed_at": "2026-05-26T00:00:00Z",
+  "installed_at": "2026-06-10T00:00:00Z",
   "target": "./.eidolons/vigil",
   "spec_file": ".eidolons/vigil/SPEC.md",
   "hosts_wired": [
@@ -84,6 +85,18 @@
     },
     {
       "path": ".claude/skills/vigil-learn/SKILL.md",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "role": "skill",
+      "mode": "created"
+    },
+    {
+      "path": "./.eidolons/vigil/skills/verify-incoming.md",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "role": "skill",
+      "mode": "created"
+    },
+    {
+      "path": ".claude/skills/vigil-verify-incoming/SKILL.md",
       "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
       "role": "skill",
       "mode": "created"
@@ -172,6 +185,13 @@
       "source_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
       "vendor_path": ".claude/skills/vigil-learn/SKILL.md",
       "vendor_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "name": "verify-incoming",
+      "source_path": ".eidolons/vigil/skills/verify-incoming.md",
+      "source_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "vendor_path": ".claude/skills/vigil-verify-incoming/SKILL.md",
+      "vendor_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
     }
   ],
   "handoffs_declared": {
@@ -195,5 +215,10 @@
       ".vigil/config.yml",
       "memories/vigil-failures.yaml"
     ]
+  },
+  "comm": {
+    "envelope_version": "2.0",
+    "emits": ["root-cause-report", "escalation-brief"],
+    "consumes": ["repair-failed-report"]
   }
 }
