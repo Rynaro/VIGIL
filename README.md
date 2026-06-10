@@ -213,7 +213,7 @@ VIGIL composes with the rest of the team:
 
 ## Versioning
 
-`SPEC.md` is authoritative. Breaking changes to phase contracts or JSON schemas require minor-version bumps. See `CHANGELOG.md`.
+Current release: **v1.6.0**. `SPEC.md` is authoritative. Breaking changes to phase contracts or JSON schemas require minor-version bumps. See `CHANGELOG.md`.
 
 ## License
 
@@ -221,4 +221,4 @@ Apache 2.0. See [LICENSE](LICENSE).
 
 ---
 
-*VIGIL v1.0.1 — Verify · Isolate · Graph · Intervene · Learn*
+*VIGIL — Verify · Isolate · Graph · Intervene · Learn*

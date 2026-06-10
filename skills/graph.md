@@ -1,16 +1,17 @@
 ---
 name: vigil-graph
-description: Phase G (Graph) — build the Information Dependency Graph from candidate fault nodes. Distinguish propagated symptoms from root candidates using information flow, not temporal order. Rank root candidates by descendant count.
-when_to_use: After `fault-surface.md` is schema-valid with ≥1 candidate. Load before Intervene phase.
+description: Phase G (Graph) — builds the Information Dependency Graph from candidate fault nodes. Distinguishes propagated symptoms from root candidates using information flow, not temporal order; ranks root candidates by descendant count. Use after `fault-surface.md` is schema-valid with ≥1 candidate, before the Intervene phase.
 allowed-tools: view_file, search_symbol, graph_query, dep_graph_query, trace_inspect
-methodology: VIGIL
-methodology_version: "1.0"
-phase: G
+metadata:
+  methodology: VIGIL
+  phase: G
 ---
 
 # SKILL: Graph — build the Information Dependency Graph
 
-**Load when:** `fault-surface.md` has ≤8 candidates. Unload when `idg.md` identifies ≥1 `ROOT_CANDIDATE` or escalates with `[GAP]`.
+## When to use
+
+Load when `fault-surface.md` has ≤8 candidates. Unload when `idg.md` identifies ≥1 `ROOT_CANDIDATE` or escalates with `[GAP]`.
 
 ---
 

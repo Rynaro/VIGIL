@@ -1,16 +1,17 @@
 ---
 name: vigil-learn
-description: Phase L (Learn) — emit verified root-cause finding with evidence chain, walk the cause back to its originating decision, persist failure signature to semantic memory for future de-duplication, route handoff to the correct downstream Eidolon.
-when_to_use: After `intervention-log.md` has a SURVIVOR. Load to produce the primary deliverable.
+description: Phase L (Learn) — emits verified root-cause finding with evidence chain, walks the cause back to its originating decision, persists failure signature to semantic memory for future de-duplication, routes handoff to the correct downstream Eidolon. Use after `intervention-log.md` has a SURVIVOR to produce the primary deliverable.
 allowed-tools: git_log, view_file, memory_write, memory_query, schema_validate
-methodology: VIGIL
-methodology_version: "1.0"
-phase: L
+metadata:
+  methodology: VIGIL
+  phase: L
 ---
 
 # SKILL: Learn — emit the verified finding, preserve the lesson
 
-**Load when:** `intervention-log.md` has a SURVIVOR with counterfactual flip. Unload after `root-cause-report.md` is schema-valid and memory entry is written.
+## When to use
+
+Load when `intervention-log.md` has a SURVIVOR with counterfactual flip. Unload after `root-cause-report.md` is schema-valid and memory entry is written.
 
 ---
 
@@ -264,7 +265,7 @@ Fill all fields from `templates/root-cause-report.envelope.json`. The `objective
 For each envelope written, append one JSONL line to `.eidolons/.trace/<thread_id>.jsonl` **relative to the consumer project root** (not the VIGIL install target). Create the `.eidolons/.trace/` directory if absent.
 
 ```jsonl
-{"ts":"<RFC3339>","event":"emit","message_id":"<uuid>","thread_id":"<uuid>","from":"vigil@1.1.0","to":"<recipient>@<version>","performative":"PROPOSE","integrity_method":"sha256","context_tokens":<int>,"model":"<host model>","tier":"standard"}
+{"ts":"<RFC3339>","event":"emit","message_id":"<uuid>","thread_id":"<uuid>","from":"vigil@<version>","to":"<recipient>@<version>","performative":"PROPOSE","integrity_method":"sha256","context_tokens":<int>,"model":"<host model>","tier":"standard"}
 ```
 
 ### Step 5 — Escalation-brief envelope (budget exhausted)

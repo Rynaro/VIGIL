@@ -173,4 +173,4 @@ Copilot: [unloads VIGIL] [loads agents/idg/SCRIBE.md]
 
 ---
 
-*VIGIL v1.0.1 — GitHub Copilot host wiring*
+*VIGIL — GitHub Copilot host wiring*

@@ -1,16 +1,17 @@
 ---
 name: vigil-intervene
-description: Phase I (Intervene) — falsify hypotheses via counterfactual replay. Design minimal interventions for each root candidate; run in sandbox; root cause is the one whose intervention flips failure→success. Hard cap 5 interventions.
-when_to_use: After `idg.md` identifies ≥1 ROOT_CANDIDATE. Load before emitting the root-cause report.
+description: Phase I (Intervene) — falsifies hypotheses via counterfactual replay. Designs minimal interventions for each root candidate; runs in sandbox; root cause is the candidate whose intervention flips failure→success. Hard cap 5 interventions. Use after `idg.md` identifies ≥1 ROOT_CANDIDATE, before emitting the root-cause report.
 allowed-tools: apply_patch_sandboxed, revert_patch, run_test, inject_oracle, statistical_replay
-methodology: VIGIL
-methodology_version: "1.0"
-phase: I-intervene
+metadata:
+  methodology: VIGIL
+  phase: I-intervene
 ---
 
 # SKILL: Intervene — falsify hypotheses via counterfactual replay
 
-**Load when:** `idg.md` schema-valid with ≥1 `ROOT_CANDIDATE`. Unload when one hypothesis survives (→ Learn) or budget exhausted (→ escalate).
+## When to use
+
+Load when `idg.md` schema-valid with ≥1 `ROOT_CANDIDATE`. Unload when one hypothesis survives (→ Learn) or budget exhausted (→ escalate).
 
 ---
 

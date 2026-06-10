@@ -1,16 +1,17 @@
 ---
 name: vigil-verify
-description: Phase V (Verify) — establish a reproducible failure. Deterministic-first; on two failed deterministic attempts, switch to statistical replay with confidence bands. No attribution begins without this phase passing.
-when_to_use: Start of every mission. Load on mission intake, before any isolation or intervention work.
+description: Phase V (Verify) — establishes a reproducible failure. Deterministic-first; on two failed deterministic attempts, switches to statistical replay with confidence bands. No attribution begins without this phase passing. Use when starting any VIGIL mission, on mission intake, before any isolation or intervention work.
 allowed-tools: run_test, run_command, read_env, capture_trace, set_seed
-methodology: VIGIL
-methodology_version: "1.0"
-phase: V
+metadata:
+  methodology: VIGIL
+  phase: V
 ---
 
 # SKILL: Verify — establish reproducible failure
 
-**Load when:** starting any mission. Unload when `reproduction.md` is schema-valid and `DETERMINISM_VERDICT ≠ intermittent`.
+## When to use
+
+Load at the start of every VIGIL mission. Unload when `reproduction.md` is schema-valid and `DETERMINISM_VERDICT ≠ intermittent`.
 
 > **Memory pre-flight:** `recall` MUST have fired in Phase V (see `agent.md`
 > §"Memory pre-flight") before any reproduction work begins. If it hasn't —
@@ -82,12 +83,12 @@ Append one JSONL line to `.eidolons/.trace/<thread_id>.jsonl` (relative to consu
 
 **On success:**
 ```jsonl
-{"ts":"<RFC3339>","event":"verify_pass","message_id":"<uuid>","thread_id":"<uuid>","from":"apivr@<version>","to":"vigil@1.1.0","performative":"<performative>","integrity_method":"sha256"}
+{"ts":"<RFC3339>","event":"verify_pass","message_id":"<uuid>","thread_id":"<uuid>","from":"apivr@<version>","to":"vigil@<version>","performative":"<performative>","integrity_method":"sha256"}
 ```
 
 **On failure:**
 ```jsonl
-{"ts":"<RFC3339>","event":"verify_fail","message_id":"<uuid>","thread_id":"<uuid>","from":"apivr@<version>","to":"vigil@1.1.0","performative":"<performative>","integrity_method":"sha256","verify_failure_code":"<CODE>"}
+{"ts":"<RFC3339>","event":"verify_fail","message_id":"<uuid>","thread_id":"<uuid>","from":"apivr@<version>","to":"vigil@<version>","performative":"<performative>","integrity_method":"sha256","verify_failure_code":"<CODE>"}
 ```
 
 If the envelope is invalid JSON, use `thread_id: "unknown"` and `message_id: "unknown"` as fallback values.

@@ -7,7 +7,26 @@ Version numbers follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ---
 
-## [Unreleased]
+## [1.6.0] — 2026-06-10 — version-stamp hygiene + canonical skill template
+
+### Changed
+
+- Version stamps aligned to 1.6.0 across all canonical homes (`install.sh`, `agent.md`, `AGENTS.md`, `SPEC.md`, README). Doc/template/host-file footers stripped of version numbers per D1 policy (version-free footers).
+- `SPEC.md §11`: VIGIL version reference updated from v1.1 to v1.6; edge integrity method reference updated to v1.6.0 edges. ECL version (`v1.0`) and `ECL_VERSION` file untouched (ECL is ecosystem-coordinated, out of scope).
+- Skill frontmatter migrated to canonical D2 template: `methodology` and `phase` moved under `metadata:`, `methodology_version` dropped from skills (was a drift surface; the frozen `"1.0"` value is preserved in `agent.md` frontmatter by documented design), `when_to_use` folded into `description` + `## When to use` body section.
+- Trace placeholder strings in `skills/verify.md`, `skills/learn.md`, `skills/verify-incoming.md` updated from hardcoded version literals to `vigil@<version>` form.
+- `examples/install.manifest.json` bumped to 1.6.0; added `eiis_version`, `comm` block, and `verify-incoming` skill entry to mirror current `install.sh` output shape.
+- `templates/root-cause-report.md` and `templates/escalation-brief.md`: hardcoded `1.0.1` version in provenance blocks replaced with `<version>` placeholder (output template examples).
+- `templates/verified-patch.md`: duplicate footer removed; remaining footer version-stripped.
+
+### Notes
+
+- `install.sh` was at 1.4.0 while `agent.md` was at 1.4.1 (the v1.4.1 agent.md token-budget fix did not bump `install.sh`). Both are now at 1.6.0.
+- `methodology_version: "1.0"` in `agent.md` and `AGENTS.md` is intentionally preserved — VIGIL methodology_version is frozen at "1.0" by documented design (see CHANGELOG.md Versioning Policy, §10 of SPEC.md).
+
+---
+
+## [1.5.0] — 2026-06-04 — blocking symmetric verify-incoming gate
 
 ### Added
 
@@ -279,7 +298,9 @@ Fan-out envelopes use `<basename>.envelope.<recipient>.json` (e.g. `…envelope.
 - `install.sh` shared-dispatch helper now emits `mode: "overwritten"` instead of `mode: "rewritten"` to match the EIIS v1.1 enum (`created`, `appended`, `overwritten`).
 - `examples/install.manifest.json` regenerated to reflect both manifest fixes; now passes `python -m jsonschema` against the vendored EIIS v1.1 schema.
 
-## [Unreleased]
+## [1.0.3-infra] — 2026-04-25 — release-integrity workflow adoption
+
+> Note: this block was stranded as `[Unreleased]` in the pre-v1.0.3 era. The work landed via PR #3 (`420e582`) and the release-integrity workflow has been active since v1.0.3. Retitled for historical clarity.
 
 ### Added
 
@@ -429,4 +450,4 @@ Implementations declare `methodology_version: "1.0"` in their `agent.md` frontma
 
 ---
 
-*VIGIL v1.1.0 — Verify · Isolate · Graph · Intervene · Learn*
+*VIGIL — Verify · Isolate · Graph · Intervene · Learn*

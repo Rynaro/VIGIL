@@ -1,16 +1,17 @@
 ---
 name: vigil-isolate
-description: Phase I (Isolate) — narrow the fault surface to ≤8 candidate nodes via delta-debugging-style reduction. Preserves failure throughout reduction; records ruled-out evidence.
-when_to_use: After `reproduction.md` is stable and `DETERMINISM_VERDICT ≠ intermittent`. Load before Graph phase.
+description: Phase I (Isolate) — narrows the fault surface to ≤8 candidate nodes via delta-debugging-style reduction. Preserves failure throughout reduction; records ruled-out evidence. Use after `reproduction.md` is stable and `DETERMINISM_VERDICT ≠ intermittent`, before the Graph phase.
 allowed-tools: git_bisect, git_log, view_file, search_symbol, search_text, run_test, dep_graph_query
-methodology: VIGIL
-methodology_version: "1.0"
-phase: I
+metadata:
+  methodology: VIGIL
+  phase: I
 ---
 
 # SKILL: Isolate — narrow the fault surface
 
-**Load when:** `reproduction.md` is schema-valid and stable. Unload when `fault-surface.md` has ≤8 candidates with evidence anchors.
+## When to use
+
+Load when `reproduction.md` is schema-valid and stable. Unload when `fault-surface.md` has ≤8 candidates with evidence anchors.
 
 > **Memory check:** if `recall` fired in Phase V, its results are already in
 > context — consult them when building the initial suspect set. Procedural
