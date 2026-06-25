@@ -1,6 +1,6 @@
 ---
 name: vigil
-version: 1.6.1
+version: 1.7.0
 methodology: VIGIL
 methodology_version: "1.0"
 description: "Forensic specialist. Post-mortem root-cause attribution for code failures, grounded in reproduction, IDG analysis, and counterfactual intervention."

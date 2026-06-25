@@ -213,7 +213,7 @@ VIGIL composes with the rest of the team:
 
 ## Versioning
 
-Current release: **v1.6.1**. `SPEC.md` is authoritative. Breaking changes to phase contracts or JSON schemas require minor-version bumps. See `CHANGELOG.md`.
+Current release: **v1.7.0**. `SPEC.md` is authoritative. Breaking changes to phase contracts or JSON schemas require minor-version bumps. See `CHANGELOG.md`.
 
 ## License
 

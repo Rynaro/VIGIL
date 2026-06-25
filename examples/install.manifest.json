@@ -1,6 +1,6 @@
 {
   "eidolon": "vigil",
-  "version": "1.6.1",
+  "version": "1.7.0",
   "methodology": "VIGIL",
   "eiis_version": "1.4",
   "canonical_inventory_strict": true,
@@ -102,6 +102,18 @@
       "mode": "created"
     },
     {
+      "path": "./.eidolons/vigil/skills/esl-hop.md",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "role": "skill",
+      "mode": "created"
+    },
+    {
+      "path": ".claude/skills/vigil-esl-hop/SKILL.md",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "role": "skill",
+      "mode": "created"
+    },
+    {
       "path": "./.eidolons/vigil/templates/root-cause-report.md",
       "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
       "role": "template",
@@ -191,6 +203,13 @@
       "source_path": ".eidolons/vigil/skills/verify-incoming.md",
       "source_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
       "vendor_path": ".claude/skills/vigil-verify-incoming/SKILL.md",
+      "vendor_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "name": "esl-hop",
+      "source_path": ".eidolons/vigil/skills/esl-hop.md",
+      "source_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "vendor_path": ".claude/skills/vigil-esl-hop/SKILL.md",
       "vendor_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
     }
   ],
