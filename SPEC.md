@@ -375,9 +375,32 @@ preserved.
 
 VIGIL v1.6 emits ECL v1.0 envelopes by default on all inter-Eidolon hand-offs. The `ECL_VERSION` file in the repository root declares the targeted spec version (`1.0`). The nexus reads this during `eidolons sync` and warns on mismatches exceeding one minor (per ECL §7.2).
 
-Integrity method: `sha256` for all v1.6.1 edges. `hmac-sha256` (RECOMMENDED for `trust_level: high` edges per ECL §6.3) is deferred to a future release pending `ECL_HMAC_KEY` distribution support in the nexus (D1). The choice is forwards-compatible: VIGIL v1.2 can promote to `hmac-sha256` without a SemVer break in any peer.
+Integrity method: `sha256` for all v1.7.0 edges. `hmac-sha256` (RECOMMENDED for `trust_level: high` edges per ECL §6.3) is deferred to a future release pending `ECL_HMAC_KEY` distribution support in the nexus (D1). The choice is forwards-compatible: VIGIL v1.2 can promote to `hmac-sha256` without a SemVer break in any peer.
 
 ECL schemas and contracts are maintained upstream at [Rynaro/eidolons-ecl](https://github.com/Rynaro/eidolons-ecl); they are not vendored into the install target. Implementors requiring offline validation should fetch `envelope.v1.json` and `contracts/apivr-to-vigil.yaml` directly from that repository.
+
+## 12. ESL Lifecycle Hop (Failure Path)
+
+In an ESL-enabled project (`mcp__tonberry__*` tools available), VIGIL owns the
+**failure path** of the Eidolons Spec Lifecycle — a checker distinct from the
+maker (maker ≠ checker, ESL C4 gate). Full lifecycle, stage definitions, and
+role bindings: `eidolons/methodology/cortex/esl-protocol.md`.
+
+**On `verify_fail`:** call
+`mcp__tonberry__transition --change_id <id> --to_status in_progress` to route the
+change back to the maker, then emit an `ESCALATE` envelope carrying your
+`[ROOT-CAUSE]` attribution (from the V→I→G→I→L cycle). The maker re-implements
+against your finding, not the symptom.
+
+**Drift gate (impl outran spec):** before archive, run
+`mcp__tonberry__drift_check --change_id <id> --checker vigil`. A mismatch between
+the implementation and the Semantic spec is a `verify_fail` → transition back +
+`ESCALATE`. Your verify/drift envelopes carry `from.eidolon = vigil`.
+
+**Graceful skip:** if `mcp__tonberry__*` tools are unavailable, run the normal
+V→I→G→I→L cycle and emit findings/escalations the standard way — never
+hard-fail. ESL is opt-in; EIIS standalone conformance is preserved. Precise
+call shapes: `skills/esl-hop.md`.
 
 ---
 

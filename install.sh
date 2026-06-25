@@ -5,7 +5,7 @@ set -euo pipefail
 
 EIDOLON_NAME="vigil"
 EIDOLON_SLUG="vigil"
-EIDOLON_VERSION="1.6.1"
+EIDOLON_VERSION="1.7.0"
 METHODOLOGY="VIGIL"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -405,7 +405,7 @@ if [[ "$MANIFEST_ONLY" != "true" ]]; then
   copy_file "SPEC.md"     "${TARGET}/SPEC.md"     "spec"
   copy_file "ECL_VERSION" "${TARGET}/ECL_VERSION" "ecl-version"
 
-  for phase in verify isolate graph intervene learn verify-incoming; do
+  for phase in verify isolate graph intervene learn verify-incoming esl-hop; do
     wire_skill "${phase}"
   done
 

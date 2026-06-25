@@ -7,6 +7,29 @@ Version numbers follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ---
 
+## [1.7.0] — 2026-06-25 — ESL lifecycle-hop adoption (failure path)
+
+### Added
+
+- **`skills/esl-hop.md`** (`name: vigil-esl-hop`, `metadata: {methodology: VIGIL, phase: post-L}`): the VIGIL ESL lifecycle hop. In an ESL-enabled project (`mcp__tonberry__*` available), VIGIL owns the **failure path** — a checker distinct from the maker (maker ≠ checker, ESL C4 gate):
+  - On `verify_fail`: `mcp__tonberry__transition --change_id <id> --to_status in_progress` (route back to the maker) + emit an `ESCALATE` envelope carrying root-cause attribution.
+  - When the implementation outran the spec: `mcp__tonberry__drift_check --change_id <id> --checker vigil` before archive; a mismatch → `verify_fail` → ESCALATE.
+  - Graceful skip: tonberry absent → run the normal V→I→G→I→L cycle (ESL opt-in); never hard-fail.
+- **`SPEC.md §12` (ESL Lifecycle Hop — Failure Path):** authoritative pointer to `skills/esl-hop.md` and the nexus cortex `methodology/cortex/esl-protocol.md`. Placed in SPEC.md rather than `agent.md` because `agent.md` is at ~996/1000 estimated tokens (only ~4 tokens of headroom) — a Skill-Loading row would blow the P0 token-budget gate (`install.sh` exits 4). Mirrors the CRYSTALIUM §9 pointer pattern.
+- `examples/install.manifest.json`: added the `esl-hop` skill — source + claude-code vendor entries in `files_written[]` plus the `skills[]` record, matching the existing skill entry shape (claude-code wiring only).
+- `install.sh`: `esl-hop` added to the `wire_skill` phase loop.
+
+### Changed
+
+- Version stamps bumped 1.6.1 → 1.7.0: `install.sh`, `agent.md`, `AGENTS.md`, `SPEC.md §11`, `README.md`, `examples/install.manifest.json`, `templates/*.envelope.json`.
+
+### Notes
+
+- `agent.md` is unchanged in content (no new Skill-Loading row) to preserve the ≤1000-token P0 budget; the ESL skill is discoverable via `SPEC.md §12`.
+- ESL stays opt-in (esl-1.0 §1.4). EIIS standalone conformance is preserved: absent `mcp__tonberry__*`, VIGIL runs its normal cycle.
+
+---
+
 ## [1.6.1] — 2026-06-10 — explicit tool allowlist for reproduction-gated Verify phase
 
 ### Changed
