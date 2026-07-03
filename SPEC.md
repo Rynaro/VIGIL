@@ -25,7 +25,7 @@ Every VIGIL implementation enforces these, mechanically where possible:
 | I-8 | **Non-determinism declared, not masked** | Deterministic-first; two failures → statistical mode with confidence bands; `[FLAKE]` marker mandatory |
 | I-9 | **Sandbox adapter interface** | VIGIL does not implement sandboxing; it uses whatever adapter the harness provides (Docker, language-native, bubblewrap, etc.) |
 | I-10 | **Telemetry-driven compaction** | ≥60% context → async fold; ≥85% → halt and checkpoint |
-| I-11 | **ECL envelope emission gates downstream hand-off** | Every artefact handed to APIVR-Δ, SPECTRA, IDG, or FORGE MUST be accompanied by an `*.envelope.json` sidecar conforming to the ECL envelope schema (see [Rynaro/eidolons-ecl](https://github.com/Rynaro/eidolons-ecl) — `envelope.v1.json`). Inbound envelopes from APIVR-Δ MUST be verified before the payload is processed (Phase V escalation entry). |
+| I-11 | **ECL envelope emission gates downstream hand-off** | Every artefact handed to APIVR-Δ, SPECTRA, IDG, or FORGE MUST be accompanied by an `*.envelope.json` sidecar conforming to the ECL envelope schema (see [Rynaro/eidolons-ecl](https://github.com/Rynaro/eidolons-ecl) — `envelope.v2.json`; `envelope.v1.json` for a v1.x sidecar accepted during the §7.3 compatibility window). Inbound envelopes from APIVR-Δ MUST be verified before the payload is processed (Phase V escalation entry). |
 
 **Why mechanical.** Model-level instructions alone drift under long-horizon pressure. The research literature converges on this across GraphTracer (arXiv:2510.10581), AgenTracer (arXiv:2509.03312), and the Lifecycle of Failures study (arXiv:2509.23735): attribution accuracy lifts substantially (46.3% → 65.8% in the lifecycle paper) when replay and dependency-graph construction are harness-enforced rather than prompt-suggested.
 
@@ -55,7 +55,7 @@ Each phase is a contract. Inputs are explicit; outputs are schema-validated; exi
 **ECL inbound verification (escalation entry mode).** When VIGIL is invoked on the escalation entry mode (APIVR-Δ → VIGIL), Phase V MUST verify the inbound envelope BEFORE processing the payload:
 
 1. Read `<repair-failed-report>.envelope.json` if present alongside the upstream artifact.
-2. Validate it against the ECL envelope schema (see [Rynaro/eidolons-ecl](https://github.com/Rynaro/eidolons-ecl) — `envelope.v1.json`).
+2. Validate it against the ECL envelope schema (see [Rynaro/eidolons-ecl](https://github.com/Rynaro/eidolons-ecl) — `envelope.v2.json`; accept `envelope.v1.json` shape for a v1.x sidecar received during the §7.3 compatibility window).
 3. Confirm `from.eidolon == "apivr"` and `to.eidolon == "vigil"` and `performative ∈ {ESCALATE, REQUEST, ACKNOWLEDGE}` per the APIVR→VIGIL hand-off contract (see [Rynaro/eidolons-ecl](https://github.com/Rynaro/eidolons-ecl) — `contracts/apivr-to-vigil.yaml`).
 4. Recompute `sha256` of the payload bytes and confirm it matches `envelope.integrity.value`.
 5. Append `verify_pass` or `verify_fail` trace event to `.eidolons/.trace/<thread_id>.jsonl` (relative to consumer project root per ECL §5.1.1).
@@ -180,7 +180,7 @@ If no envelope sidecar is present (non-ECL APIVR-Δ), skip verification and proc
 
 **Outputs.**
 1. **`root-cause-report.md`** (primary deliverable) — per `templates/root-cause-report.md`
-2. **`root-cause-report-<mission-id>.envelope.json`** (or `…envelope.<recipient>.json` for fan-out) — ECL v1.0 envelope sidecar; envelope structure defined by the ECL envelope schema (see [Rynaro/eidolons-ecl](https://github.com/Rynaro/eidolons-ecl) — `envelope.v1.json`)
+2. **`root-cause-report-<mission-id>.envelope.json`** (or `…envelope.<recipient>.json` for fan-out) — ECL v2.0 envelope sidecar; envelope structure defined by the ECL envelope schema (see [Rynaro/eidolons-ecl](https://github.com/Rynaro/eidolons-ecl) — `envelope.v2.json`)
 3. **`verified-patch.diff`** — if authority ≥ `sandbox` and survivor was a code change
 4. **`failure-signature.yaml`** — entry for the semantic memory ledger
 5. **Handoff directive** — pointer to downstream recipient (APIVR-Δ / SPECTRA / IDG / human)
@@ -190,7 +190,8 @@ If no envelope sidecar is present (non-ECL APIVR-Δ), skip verification and proc
 1. Compute `sha256` of the payload bytes.
 2. Generate a UUIDv7 `message_id`. Reuse `thread_id` from the inbound envelope on escalation entry; generate a new one on consultant/post-hoc first emit.
 3. For fan-out (e.g. SPEC_DEFECT → SPECTRA + IDG): write the payload once, then write **one envelope per recipient** with distinct `message_id` values and shared `thread_id` and `parent_id`. File suffix: `<basename>.envelope.<recipient>.json` (e.g. `…envelope.spectra.json`, `…envelope.idg.json`). The `vigil-to-idg` envelope MUST set `constraints.trust_level: "standard"`; `vigil-to-apivr` and `vigil-to-spectra` envelopes MUST set `constraints.trust_level: "high"`.
-4. Append one `emit` trace event per envelope to `.eidolons/.trace/<thread_id>.jsonl` (relative to consumer project root per ECL §5.1.1; create the directory if absent).
+4. Set `ise.assertion_grade` per `skills/intervene.md` § ISE Grade on the Root-Cause Report (conditional on authority) and `ise.receiver_authorization: {auto_route: true, auto_merge: false, auto_deploy: false}` on every envelope (ECL v2.0 §6.5).
+5. Append one `emit` trace event per envelope to `.eidolons/.trace/<thread_id>.jsonl` (relative to consumer project root per ECL §5.1.1; create the directory if absent).
 
 **Method.**
 1. Walk the root cause back to its originating decision — commit, prompt, schema, config change. Cite the chain explicitly.
@@ -373,11 +374,13 @@ preserved.
 
 ## 11. ECL Compatibility
 
-VIGIL v1.6 emits ECL v1.0 envelopes by default on all inter-Eidolon hand-offs. The `ECL_VERSION` file in the repository root declares the targeted spec version (`1.0`). The nexus reads this during `eidolons sync` and warns on mismatches exceeding one minor (per ECL §7.2).
+VIGIL v1.8.0 emits ECL v2.0 envelopes by default on all inter-Eidolon hand-offs. The `ECL_VERSION` file in the repository root declares the targeted spec version (`2.0`). The nexus reads this during `eidolons sync` and warns on mismatches exceeding one minor (per ECL §7.2).
 
-Integrity method: `sha256` for all v1.7.0 edges. `hmac-sha256` (RECOMMENDED for `trust_level: high` edges per ECL §6.3) is deferred to a future release pending `ECL_HMAC_KEY` distribution support in the nexus (D1). The choice is forwards-compatible: VIGIL v1.2 can promote to `hmac-sha256` without a SemVer break in any peer.
+Integrity method: `sha256` for all v1.8.0 edges. `hmac-sha256` (RECOMMENDED for `trust_level: high` edges per ECL §6.3) is deferred to a future release pending `ECL_HMAC_KEY` distribution support in the nexus (D1). The choice is forwards-compatible: VIGIL can promote to `hmac-sha256` without a SemVer break in any peer.
 
-ECL schemas and contracts are maintained upstream at [Rynaro/eidolons-ecl](https://github.com/Rynaro/eidolons-ecl); they are not vendored into the install target. Implementors requiring offline validation should fetch `envelope.v1.json` and `contracts/apivr-to-vigil.yaml` directly from that repository.
+VIGIL's own source repo vendors `schemas/ecl/envelope.v2.json` (current) alongside the retained `schemas/ecl/envelope.v1.json` (§7.3 compatibility window, through 2027-05-13) for self-contained `jq`-validation; neither is copied into the consumer install target (EIIS v1.4 §1.7 whitelist). ECL schemas and contracts remain maintained upstream at [Rynaro/eidolons-ecl](https://github.com/Rynaro/eidolons-ecl) as the source of truth — implementors requiring offline validation without cloning VIGIL should fetch `envelope.v2.json` and `contracts/apivr-to-vigil.yaml` directly from that repository.
+
+**ISE trust hierarchy (ECL v2.0 §6.5).** VIGIL's emitted envelopes MAY carry the optional `ise` block. `root-cause-report`'s `ise.assertion_grade` is conditional on authority — see `skills/intervene.md` § ISE Grade on the Root-Cause Report for the full rule. `escalation-brief` is always `self-attested`. All emitted envelopes set `ise.receiver_authorization = {auto_route: true, auto_merge: false, auto_deploy: false}` — VIGIL never authorizes a receiver to merge or deploy on its behalf.
 
 ## 12. ESL Lifecycle Hop (Failure Path)
 

@@ -180,6 +180,40 @@ Verdict: **FLIPPED only if ≥4 of 5 runs pass**. 3/5 is not enough — the nois
 
 ---
 
+## ISE Grade on the Root-Cause Report
+
+`root-cause-report.envelope.json`'s optional `ise.assertion_grade` (ECL v2.0
+§6.5) is **conditional on the authority row above**, not a fixed value —
+VIGIL's primary deliverable has two authority-gated emission shapes, and the
+grade must say which one actually happened:
+
+- **`validated`** — authority ∈ `{sandbox, write}` **and** the survivor
+  intervention's counterfactual result is `FLIPPED`. This is the case where
+  ECL's spec-mandated-gate bar is met: I-4 (counterfactual-gated blame) ran
+  for real, in an isolated sandbox, and the flip is recorded evidence — not a
+  self-report.
+- **`self-attested`** — authority = `read-only`. Interventions were
+  *simulated*, not executed (see the table above); `[ROOT-CAUSE]` never
+  fires, only `[HYPOTHESIS-N]` with a high-priority flag. No external gate
+  ran, so the honest grade is VIGIL's own judgement, not `validated`.
+
+There is no case where a `root-cause-report` ships with `unverified` — Phase
+L never emits the report without at least a simulated or real intervention
+result — and `human-reviewed` is reserved for an operator sign-off VIGIL
+cannot claim on its own behalf.
+
+`escalation-brief.envelope.json` is always `"self-attested"`: budget
+exhaustion with no `FLIPPED` result (this section, above) is VIGIL's own
+bounded-failure judgement, not an externally-gated pass — see § ECL
+Escalation-Brief Envelope below.
+
+Both envelope kinds set `ise.receiver_authorization:
+{auto_route: true, auto_merge: false, auto_deploy: false}` — VIGIL findings
+route automatically but never authorize a receiver to merge or deploy on
+VIGIL's say-so alone.
+
+---
+
 ## Budget Exhaustion — Escalation Protocol
 
 If 5 interventions run without a FLIPPED result:
@@ -243,7 +277,7 @@ budget:
 
 ## ECL Escalation-Brief Envelope
 
-On budget exhaustion (5 interventions, no FLIPPED result), the escalation-brief payload is wrapped per `templates/escalation-brief.envelope.json` with `performative: "ESCALATE"` and `to.eidolon: "forge"`. The `assumptions[]` array MUST include `"trigger: budget-exhausted-no-flip"` (ECL §2.2.3). The `edge_origin` is `"roster"` — the `vigil → forge` lateral edge is declared in `roster/index.yaml`.
+On budget exhaustion (5 interventions, no FLIPPED result), the escalation-brief payload is wrapped per `templates/escalation-brief.envelope.json` with `performative: "ESCALATE"` and `to.eidolon: "forge"`. The `assumptions[]` array MUST include `"trigger: budget-exhausted-no-flip"` (ECL §2.2.3). The `edge_origin` is `"roster"` — the `vigil → forge` lateral edge is declared in `roster/index.yaml`. `ise.assertion_grade` is always `"self-attested"` — see § ISE Grade on the Root-Cause Report above for the rule and rationale shared by both emitted envelope kinds.
 
 See `skills/learn.md` § Envelope Emission for the full envelope construction procedure (SHA-256 computation, trace-event append, `thread_id` resolution).
 

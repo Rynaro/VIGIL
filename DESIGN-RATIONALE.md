@@ -312,29 +312,36 @@ The handoff recipient is determined by the `originating_decision.classification`
 
 ---
 
-## ECL v1.0 Adoption Rationale
+## ECL v2.0 Adoption Rationale
 
 > **Spec:** `/Users/henrique/workspace/oss/agents/eidolons/.spectra/vigil-ecl-adoption.md` (SPECTRA v4.2.11, generated 2026-05-08, status: READY FOR APIVR-Δ)
 
-VIGIL v1.1.0 adopts ECL v1.0. Four decisions govern the adoption shape:
+VIGIL v1.1.0 adopted ECL v1.0; VIGIL v1.8.0 closes the drift between the
+already-`2.0` `ECL_VERSION` declaration and the still-v1-only vendored
+schema, bringing the emitted envelope up to the full ECL v2.0 §6.5 shape.
+Four decisions governed the original adoption shape and remain in force:
 
 ### D1 — Integrity method: sha256 (hmac-sha256 deferred)
 
-ECL §6.3 RECOMMENDS `hmac-sha256` for `trust_level: high` edges (which both `vigil-to-apivr` and `vigil-to-spectra` carry). VIGIL v1.1.0 uses `sha256` only.
+ECL §6.3 RECOMMENDS `hmac-sha256` for `trust_level: high` edges (which both `vigil-to-apivr` and `vigil-to-spectra` carry). VIGIL v1.8.0 still uses `sha256` only.
 
-**Rationale.** No `ECL_HMAC_KEY` distribution mechanism exists in the nexus today. Introducing HMAC without a key-distribution contract would produce an unusable gate (no key → verify_fail on every receive). The sha256 choice is forwards-compatible: VIGIL v1.2 can promote to `hmac-sha256` without a SemVer break in either VIGIL or ECL.
+**Rationale.** No `ECL_HMAC_KEY` distribution mechanism exists in the nexus today. Introducing HMAC without a key-distribution contract would produce an unusable gate (no key → verify_fail on every receive). The sha256 choice is forwards-compatible: VIGIL can promote to `hmac-sha256` without a SemVer break in either VIGIL or ECL.
 
 **Precedent.** APIVR-Δ v3.1.0 ECL adoption made the same decision for the same reason.
 
-**Future.** ECL v1.1 GA + nexus `ECL_HMAC_KEY` distribution unlock promotion. Tracked as F3 in the spec follow-ups.
+**Future.** ECL `hmac-sha256` promotion + nexus `ECL_HMAC_KEY` distribution unlock this. Tracked as F3 in the spec follow-ups.
 
 ### D3 — Schema vendoring: vendor-inlined-enum
 
-ECL schemas are vendored at `schemas/ecl/` (envelope, base profile, root-cause-report profile). The `performative` enum from ECL §2.1 is **inlined** inside `schemas/ecl/envelope.v1.json` at both `properties.performative` and `properties.expected_response.properties.performative`.
+ECL schemas are vendored at `schemas/ecl/` (envelope, base profile, root-cause-report profile). The `performative` enum from ECL §2.1 is **inlined** inside both `schemas/ecl/envelope.v1.json` and `schemas/ecl/envelope.v2.json` at `properties.performative` and `properties.expected_response.properties.performative`.
 
-**Rationale.** The gate command `jq empty schemas/ecl/*.json` (G0) must pass without a `$ref` resolver. Inlining makes the vendored set self-contained. The upstream source (`eidolons-ecl/schemas/envelope.v1.json`) uses a `$ref` to a sibling `performative.v1.json`; the vendored copy inlines that reference instead.
+**Rationale.** The gate command `jq empty schemas/ecl/*.json` (G0) must pass without a `$ref` resolver. Inlining makes the vendored set self-contained. The upstream source (`eidolons-ecl/schemas/envelope.v2.json`) uses a `$ref` to sibling `performative.v1.json` and `context-delta.v1.json` files; the vendored copy inlines both instead.
 
-**Drift management.** `ECL_VERSION` declares the targeted spec version. On every ECL minor, diff `schemas/ecl/envelope.v1.json` against upstream (modulo the inlined enum) and bump VIGIL accordingly.
+**v1/v2 co-existence.** `schemas/ecl/envelope.v2.json` is vendored **alongside**, not instead of, `schemas/ecl/envelope.v1.json`. The v1 file is retained so VIGIL's own tooling can still validate a v1.x sidecar received during the ECL §7.3 compatibility window (through 2027-05-13); it is not shipped to the install target either way (CHANGELOG 1.3.0). `envelope.v2.json`'s `envelope_version` pattern is strict to `2.0` — a receiver that needs to accept both versions selects the schema file matching the received `envelope_version`.
+
+**ISE grade (ECL v2.0 §6.5) — why the root-cause-report grade is conditional, not fixed.** Unlike a typical single-shape emitter, VIGIL's primary deliverable has two authority-gated emission paths (`skills/intervene.md` "Authority-Gated Execution"): under `sandbox`/`write` authority a real counterfactual intervention either flips or the mission escalates — I-4's spec-mandated gate actually ran, earning `validated`. Under `read-only` authority interventions are simulated only and `[ROOT-CAUSE]` downgrades to `[HYPOTHESIS-N]` — no external gate ran, so the honest grade is `self-attested`. `escalation-brief` is always `self-attested`: budget exhaustion with no flip is VIGIL's own bounded-failure judgement, not an externally-gated pass. Full rule: `skills/intervene.md` § ISE Grade on the Root-Cause Report.
+
+**Drift management.** `ECL_VERSION` declares the targeted spec version. On every ECL minor, diff `schemas/ecl/envelope.v2.json` against upstream (modulo the inlined enum and context-delta shape) and bump VIGIL accordingly.
 
 ### D4 — Fan-out: one payload, N envelopes
 

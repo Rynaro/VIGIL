@@ -55,7 +55,7 @@ If the upstream artifact path `P` has a sibling `${P%.*}.envelope.json`, verific
 
 ### Step V-E1 — Schema shape
 
-Validate the envelope JSON against `schemas/ecl/envelope.v1.json`.
+Validate the envelope JSON against `schemas/ecl/envelope.v2.json` (or `envelope.v1.json` for a v1.x sidecar received during the ECL §7.3 compatibility window — select the vendored file matching the received `envelope_version`).
 
 Check that the envelope parses as valid JSON and all required fields are present: `envelope_version`, `message_id`, `thread_id`, `parent_id`, `from`, `to`, `performative`, `objective`, `artifact`, `integrity`, `trace`. On failure: failure code `SCHEMA_INVALID`.
 
