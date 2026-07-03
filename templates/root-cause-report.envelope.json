@@ -1,11 +1,11 @@
 {
-  "envelope_version": "1.0",
+  "envelope_version": "2.0",
   "message_id": "{{ message_id }}",
   "thread_id": "{{ thread_id }}",
   "parent_id": "{{ parent_id }}",
   "from": {
     "eidolon": "vigil",
-    "version": "1.7.0"
+    "version": "1.8.0"
   },
   "to": {
     "eidolon": "{{ to.eidolon }}",
@@ -33,6 +33,19 @@
   },
   "constraints": {
     "trust_level": "{{ constraints.trust_level }}"
+  },
+  "ise": {
+    "assertion_grade": "{{ ise.assertion_grade }}",
+    "provenance": {
+      "methodology_version": "vigil-1.8.0",
+      "tool_surface": ["Read", "Grep", "Glob", "Bash"],
+      "lateral_consults": []
+    },
+    "receiver_authorization": {
+      "auto_route": true,
+      "auto_merge": false,
+      "auto_deploy": false
+    }
   },
   "expected_response": {
     "performative": "ACKNOWLEDGE",

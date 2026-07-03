@@ -7,6 +7,89 @@ Version numbers follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ---
 
+## [1.8.0] — 2026-07-03 — ECL v2.0 adoption (vendoring + ISE emission)
+
+Wave-3 ECL-2.0 adoption sweep. `ECL_VERSION` (and `agent.md`'s
+`comm.envelope_version` frontmatter) already declared `2.0`, but the vendored
+schema, three prose surfaces, and both emitted envelope templates had not
+caught up — this release closes that gap.
+
+### Added
+
+- **`schemas/ecl/envelope.v2.json`** — self-contained vendored copy of
+  `eidolons-ecl@v2.0.0`'s `schemas/envelope.v2.json` (`spec/ecl-2.0.md` §6.5),
+  following the same inlined-enum, self-contained convention as the existing
+  `schemas/ecl/envelope.v1.json` (D3, `DESIGN-RATIONALE.md`). `envelope_version`
+  is strict to `2.0`; the sibling v1 file is **retained**, not replaced, so
+  VIGIL's own tooling can still validate a v1.x sidecar received during the
+  ECL §7.3 compatibility window (through 2027-05-13). Neither file is copied to
+  the install target (unchanged since v1.3.0 — this tree is source-repo-only).
+- **ISE (Intent, Source, Entitlement) emission (ECL v2.0 §6.5).**
+  `templates/root-cause-report.envelope.json` and
+  `templates/escalation-brief.envelope.json` gain an `ise` block. The
+  root-cause-report grade is **conditional on authority**, not fixed:
+  `validated` when authority ∈ `{sandbox, write}` and the survivor
+  intervention's counterfactual result is `FLIPPED` (I-4's spec-mandated gate
+  actually ran); `self-attested` when authority = `read-only` (interventions
+  are simulated only, `[ROOT-CAUSE]` downgrades to `[HYPOTHESIS-N]` — no
+  external gate ran). The escalation-brief grade is always `self-attested`
+  (budget exhaustion with no flip is VIGIL's own bounded-failure judgement).
+  The full rule and its justification live in `skills/intervene.md` §
+  "ISE Grade on the Root-Cause Report" (a single documented rule, not repeated
+  inline per emission); `skills/learn.md` and `SPEC.md §11` cross-reference it.
+  Both envelope kinds set `ise.receiver_authorization = {auto_route: true,
+  auto_merge: false, auto_deploy: false}`.
+- **`skills/esl-hop.md` — pending ECL 2.1 verification-attestation note
+  (documentation only).** ECL v2.1 (Draft, adoption-gated — `spec/ecl-2.1.md`
+  §6.5.8) defines an OPTIONAL `ise.verification` sub-block
+  (`fresh_context`/`checker`/`transcript_access`) that is the natural wire
+  shape for VIGIL's maker≠checker failure-path role. Documented as a pending
+  mapping for when 2.1 is cut to Published; **not emitted** — `ECL_VERSION`
+  stays `2.0` and no template changed.
+- `tests/ecl-v2-adoption.bats` — new suite covering the vendored v2 schema
+  shape, v1 retention, ISE grade correctness on both envelope templates
+  (asserting the root-cause-report and escalation-brief grades differ),
+  install.sh version wiring, verify-incoming convergence (new failure codes,
+  "roster" phrasing), and drift-kill greps (no stray "ECL v1.0" prose left
+  outside `CHANGELOG.md`).
+
+### Changed
+
+- **Drift kill — 3 stale "ECL v1.0" prose references reconciled to v2.0:**
+  `AGENTS.md` § ECL Emission Contract (both the "VIGIL vX.Y.Z emits ECL v1.0
+  envelopes" line and the "ECL version targeted: ... declares 1.0" line, which
+  was already factually wrong against the `2.0`-declaring `ECL_VERSION` file),
+  `SPEC.md §11` "ECL Compatibility" (rewritten with the vendored v1/v2
+  co-existence note and an ISE pointer), and `skills/learn.md` § Envelope
+  Emission. Schema-path references in `SPEC.md` (I-11, Phase V, Phase L
+  outputs), `skills/verify.md` Step V-E1, and `templates/root-cause-report.md`'s
+  top note now point at `envelope.v2.json` (noting `v1.json` is accepted for
+  the compatibility window where relevant).
+- **`skills/verify-incoming.md` converged on the canonical ECL v2.0 blocking-gate
+  shape** (reference: Kupo's `skills/verify-incoming.md`): failure-code list
+  gains the two missing ECL §5.3 codes (`CONTEXT_OVER_BUDGET`,
+  `MISSING_REQUIRED_SECTION`); the stale "All six Eidolons" count is now "All
+  Eidolons in the roster". VIGIL's own accepted-artefact table (apivr / atlas /
+  spectra / idg / forge → vigil) is unchanged.
+- **`DESIGN-RATIONALE.md`** — "ECL v1.0 Adoption Rationale" retitled "ECL v2.0
+  Adoption Rationale"; D3 (schema vendoring) updated for v1/v2 co-existence;
+  new ISE-grade rationale paragraph cross-referencing `skills/intervene.md`.
+- Version stamps bumped 1.7.0 → 1.8.0 in the 5 canonical homes: `install.sh`,
+  `agent.md`, `AGENTS.md`, `SPEC.md`, `README.md`. `examples/install.manifest.json`
+  and `templates/*.envelope.json` (`from.version`, `provenance.methodology_version`)
+  updated to match, as in every prior release.
+
+### Notes
+
+- `install.sh` has no separate hardcoded ECL-version variable to drift — it
+  only checks for the presence of `ECL_VERSION` and copies it verbatim, and
+  that file already declared `2.0`. Nothing to fix there.
+- Methodology content (phase contracts, invariants, taxonomy, evidence ladder)
+  is unchanged. This release is additive: vendoring, ISE emission, and prose
+  reconciliation only.
+
+---
+
 ## [1.7.0] — 2026-06-25 — ESL lifecycle-hop adoption (failure path)
 
 ### Added

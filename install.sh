@@ -5,7 +5,7 @@ set -euo pipefail
 
 EIDOLON_NAME="vigil"
 EIDOLON_SLUG="vigil"
-EIDOLON_VERSION="1.7.0"
+EIDOLON_VERSION="1.8.0"
 METHODOLOGY="VIGIL"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 

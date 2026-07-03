@@ -44,6 +44,27 @@ cortex `methodology/cortex/esl-protocol.md`.
   way; **never hard-fail**. ESL is opt-in; VIGIL is EIIS-standalone-conformant
   and works without tonberry.
 
+## Pending: ECL 2.1 verification-attestation (not yet implemented)
+
+ECL v2.1 (Draft, adoption-gated — `spec/ecl-2.1.md` §6.5.8) defines an
+OPTIONAL `ise.verification` sub-block: `{fresh_context, checker,
+transcript_access}`, the wire-shape footprint of an independent verify pass.
+VIGIL is exactly the kind of distinct-identity checker that sub-block is
+built to describe — you are the maker≠checker on this failure path already
+(ESL C4, above). Once ECL 2.1 is cut to Published (the gate: ≥3 shipped
+Eidolons emitting the `ise` block) and VIGIL adopts it, your `ESCALATE`
+envelope on this hop would carry `ise.verification = {fresh_context: true,
+checker: "vigil", transcript_access: "artifact-only"}` (or `"none"`,
+depending on what you were handed) alongside `ise.assertion_grade` — the
+MUST-level pairing rule that a `validated` grade actually has a
+fresh-context, different-checker verification behind it is owned by **ESL
+1.1 C8**, not ECL (ECL only shape-checks the sub-block, per §6.5.8.3).
+
+**This is documented as pending, not emitted.** ECL 2.1 is Draft; `ECL_VERSION`
+stays `2.0` and VIGIL's emitted envelopes do not carry `ise.verification` yet.
+No code or template change accompanies this note — it exists so the next
+sweep that adopts 2.1 has the mapping already worked out.
+
 ---
 
 *VIGIL — ESL Lifecycle Hop (failure path)*
