@@ -1,802 +1,123 @@
 #!/usr/bin/env bash
-# VIGIL installer — EIIS-1.4 conformant
-# Usage: bash install.sh [OPTIONS]
+# Declarative EIIS v3 package installer. Host adapters are nexus-owned.
 set -euo pipefail
 
-EIDOLON_NAME="vigil"
-EIDOLON_SLUG="vigil"
-EIDOLON_VERSION="1.8.0"
-METHODOLOGY="VIGIL"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-# --------------------------------------------------------------------------- #
-# Legacy artefacts swept on upgrade (Strategy A — hardcoded early sweep)
-# v1.2-era filenames + v1.4 non-whitelisted files removed from install-target.
-# The canonical_inventory_sweep (late, manifest-driven) is the normative gate
-# per EIIS v1.4 §6.X; this early list is a belt-and-braces defensive layer.
-# --------------------------------------------------------------------------- #
-LEGACY_SPEC_FILES=( \
-  "VIGIL.md" \
-  "AGENTS.md" \
-  "CHANGELOG.md" \
-  "CLAUDE.md" \
-  "README.md" \
-  "DESIGN-RATIONALE.md" \
-)
-LEGACY_SKILL_DIRS=( \
-  "graph" \
-  "intervene" \
-  "isolate" \
-  "learn" \
-  "verify" \
-)
-
-# --------------------------------------------------------------------------- #
-# Defaults
-# --------------------------------------------------------------------------- #
-TARGET="./.eidolons/${EIDOLON_NAME}"
-HOSTS="auto"
-MODE="read-only"
+PACKAGE_MANIFEST="$SCRIPT_DIR/manifest.json"
+TARGET=""
+HOSTS="raw"
 FORCE=false
 DRY_RUN=false
 NON_INTERACTIVE=false
 MANIFEST_ONLY=false
-SHARED_DISPATCH=false
 
-# --------------------------------------------------------------------------- #
-# Help
-# --------------------------------------------------------------------------- #
 usage() {
-  cat <<EOF
+  cat <<'EOF'
 Usage: bash install.sh [OPTIONS]
-
-Install the VIGIL v${EIDOLON_VERSION} forensic debugger methodology into
-the current consumer project.
-
-Options:
-  --target DIR            Target install dir (default: ${TARGET})
-  --hosts LIST            claude-code,copilot,cursor,opencode,codex,all,auto,none
-                          (default: auto)
-  --mode MODE             Authority mode: read-only|sandbox|write (default: ${MODE})
-  --shared-dispatch       Compose marker-bounded section in root AGENTS.md /
-                          CLAUDE.md / .github/copilot-instructions.md (opt-in).
-  --no-shared-dispatch    Skip root dispatch files (default).
-  --force                 Overwrite existing install without prompting
-  --dry-run               Print actions without writing any files
-  --non-interactive       No prompts; fail on ambiguity (meta-installer mode)
-  --manifest-only         Only emit install.manifest.json (no file copies)
-  --version               Print Eidolon version and exit
-  -h, --help              Show this help and exit
-
-Host detection (--hosts auto):
-  claude-code   detected if CLAUDE.md or .claude/ exists
-  copilot       detected if .github/ exists
-  cursor        detected if .cursor/ or .cursorrules exists
-  opencode      detected if .opencode/ exists
-  codex         detected if .codex/ exists, or AGENTS.md without .github/.codex/
-
-Authority modes (--mode):
-  read-only     Interventions simulated only; no sandbox execution (safest default)
-  sandbox       Interventions run in isolated adapter; working tree untouched
-  write         Sandbox first; may emit verified-patch.diff (never auto-applies)
-
-Examples:
-  bash install.sh
-  bash install.sh --target ./vendor/vigil --hosts claude-code,copilot
-  bash install.sh --mode sandbox --non-interactive --force
-  bash install.sh --dry-run
+  --target DIR
+  --hosts LIST              Accepted for orchestration compatibility; adapters are nexus-owned.
+  --force
+  --non-interactive
+  --dry-run
+  --manifest-only
+  --shared-dispatch         Accepted no-op; root routing is nexus-owned.
+  --no-shared-dispatch      Accepted no-op; root routing is nexus-owned.
+  --version
+  -h, --help
 EOF
 }
 
-# --------------------------------------------------------------------------- #
-# Argument parsing
-# --------------------------------------------------------------------------- #
-# Legacy positional target and --mode=VALUE are preserved as a compatibility
-# shim for pre-v1.0.1 callers. Prefer --target DIR and --mode MODE.
-while [[ $# -gt 0 ]]; do
-  case "$1" in
-    --target)               TARGET="$2"; shift 2 ;;
-    --hosts)                HOSTS="$2"; shift 2 ;;
-    --mode)                 MODE="$2"; shift 2 ;;
-    --mode=*)               MODE="${1#--mode=}"; shift ;;
-    --shared-dispatch)      SHARED_DISPATCH=true; shift ;;
-    --no-shared-dispatch)   SHARED_DISPATCH=false; shift ;;
-    --force)                FORCE=true; shift ;;
-    --dry-run)              DRY_RUN=true; shift ;;
-    --non-interactive)      NON_INTERACTIVE=true; shift ;;
-    --manifest-only)        MANIFEST_ONLY=true; shift ;;
-    --version)              echo "${EIDOLON_VERSION}"; exit 0 ;;
-    -h|--help)              usage; exit 0 ;;
-    -*)                     echo "Unknown option: $1" >&2; usage >&2; exit 2 ;;
-    *)
-      TARGET="$1"
-      echo "Warning: positional target is deprecated; use --target DIR instead" >&2
-      shift ;;
-  esac
-done
-
-# --------------------------------------------------------------------------- #
-# Validate mode
-# --------------------------------------------------------------------------- #
-case "$MODE" in
-  read-only|sandbox|write) ;;
-  *)
-    echo "ERROR: Invalid --mode '$MODE'. Must be one of: read-only, sandbox, write" >&2
-    exit 2
-    ;;
-esac
-
-# --------------------------------------------------------------------------- #
-# Utilities
-# --------------------------------------------------------------------------- #
-log()  { echo "[vigil] $*"; }
-warn() { echo "[vigil] WARN: $*" >&2; }
-
-do_action() {
-  local desc="$1"; shift
-  if [[ "$DRY_RUN" == "true" ]]; then
-    echo "  [dry-run] ${desc}"
-  else
-    "$@"
-  fi
-}
-
-# cleanup_legacy_v1_2 <target>
-#
-# Sweep legacy v1.2-era artefacts left behind by prior installs.
-# Called exactly once, early in the install sequence, BEFORE any new content
-# is written under <target>. Idempotent: no-op when no legacy file exists.
-#
-# Reads two top-of-file arrays:
-#   LEGACY_SPEC_FILES  — basenames to rm -f at "<target>/<basename>"
-#   LEGACY_SKILL_DIRS  — skill names to rm -rf at "<target>/skills/<name>"
-#
-# Both arrays are declared per-Eidolon and MAY be empty (in which case
-# the corresponding loop is a no-op). Never reads/writes outside <target>.
-cleanup_legacy_v1_2() {
-  local target="$1"
-  local legacy
-  local legacy_skill_dir
-
-  if [ -z "${target}" ] || [ ! -d "${target}" ]; then
-    return 0
-  fi
-
-  # Sweep legacy spec filenames (e.g. VIGIL.md)
-  for legacy in "${LEGACY_SPEC_FILES[@]}"; do
-    if [ -n "${legacy}" ] && [ -f "${target}/${legacy}" ]; then
-      rm -f "${target}/${legacy}"
-      warn "swept legacy spec file: ${target}/${legacy}"
-    fi
-  done
-
-  # Sweep legacy subdir-style skills (e.g. skills/graph/SKILL.md)
-  for legacy_skill_dir in "${LEGACY_SKILL_DIRS[@]}"; do
-    if [ -n "${legacy_skill_dir}" ] && [ -d "${target}/skills/${legacy_skill_dir}" ]; then
-      rm -rf "${target}/skills/${legacy_skill_dir}"
-      warn "swept legacy skill subdir: ${target}/skills/${legacy_skill_dir}"
-    fi
-  done
-
-  return 0
-}
-
-# canonical_inventory_sweep <target>
-#
-# Remove every file under <target>/ that is not present in the in-memory
-# allow-set FILES_WRITTEN_PATHS. Called once, AFTER all writes complete,
-# BEFORE the manifest is finalized. Idempotent: no-op on a clean target.
-# EIIS v1.4 §6.X normative sweep; bash 3.2 compatible.
-#
-# Reads FILES_WRITTEN_PATHS — indexed array of target-relative or
-# consumer-relative paths written this run. Accumulated by copy_file,
-# wire_skill, and other write helpers during the install.
-canonical_inventory_sweep() {
-  local target="$1"
-  local file_rel
-  local found
-  local known
-
-  if [ -z "${target}" ] || [ ! -d "${target}" ]; then
-    return 0
-  fi
-
-  find "${target}" -type f -print0 | while IFS= read -r -d '' file; do
-    file_rel="${file#${target}/}"
-
-    found=0
-    for known in "${FILES_WRITTEN_PATHS[@]}"; do
-      case "${known}" in
-        *"/${file_rel}"|"${file_rel}")
-          found=1
-          break
-          ;;
-      esac
-    done
-
-    if [ "${found}" -eq 0 ]; then
-      rm -f "${file}"
-      warn "swept non-whitelisted file: ${file}"
-    fi
-  done
-
-  find "${target}" -mindepth 1 -type d -empty -delete 2>/dev/null || true
-
-  return 0
-}
-
+pkg_name() { jq -r '.name' "$PACKAGE_MANIFEST"; }
+pkg_version() { jq -r '.version' "$PACKAGE_MANIFEST"; }
 sha256_file() {
-  local f="$1"
-  if command -v shasum &>/dev/null; then
-    shasum -a 256 "$f" | awk '{print $1}'
-  elif command -v sha256sum &>/dev/null; then
-    sha256sum "$f" | awk '{print $1}'
-  elif command -v openssl &>/dev/null; then
-    openssl dgst -sha256 "$f" | awk '{print $NF}'
-  else
-    echo "0000000000000000000000000000000000000000000000000000000000000000"
-  fi
+  if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" | awk '{print $1}'
+  else shasum -a 256 "$1" | awk '{print $1}'; fi
+}
+tree_sha256() {
+  local root="$1" listing
+  listing="$(mktemp)"
+  find "$root" -type f ! -name install.receipt.json -print | LC_ALL=C sort | while IFS= read -r file; do
+    printf '%s  %s\n' "$(sha256_file "$file")" "${file#"$root/"}"
+  done > "$listing"
+  sha256_file "$listing"
+  rm -f "$listing"
 }
 
-# --------------------------------------------------------------------------- #
-# Source sanity check
-# --------------------------------------------------------------------------- #
-if [[ ! -f "${SCRIPT_DIR}/SPEC.md" ]]; then
-  echo "ERROR: install.sh must run from the VIGIL source directory (SPEC.md not found)" >&2
-  exit 3
-fi
-
-if [[ ! -f "${SCRIPT_DIR}/ECL_VERSION" ]]; then
-  echo "ERROR: ECL_VERSION not found in VIGIL source directory" >&2
-  exit 3
-fi
-
-# --------------------------------------------------------------------------- #
-# Host detection
-# --------------------------------------------------------------------------- #
-detect_hosts() {
-  local detected=()
-  [[ -f "CLAUDE.md" || -d ".claude" ]]       && detected+=("claude-code")
-  [[ -d ".github" ]]                          && detected+=("copilot")
-  [[ -d ".cursor" || -f ".cursorrules" ]]     && detected+=("cursor")
-  [[ -d ".opencode" ]]                        && detected+=("opencode")
-  # Codex (EIIS v1.1 §4.5): .codex/ is the definitive Codex-only signal;
-  # AGENTS.md alone (without .github/) also indicates Codex.
-  [[ -d ".codex" ]]                           && detected+=("codex")
-  if [[ -f "AGENTS.md" && ! -d ".github" && ! -d ".codex" ]]; then
-    detected+=("codex")
-  fi
-  printf "%s\n" "${detected[@]:-}"
-}
-
-if [[ "$HOSTS" == "auto" ]]; then
-  HOSTS_ARRAY=()
-  while IFS= read -r line; do
-    [[ -n "$line" ]] && HOSTS_ARRAY+=("$line")
-  done < <(detect_hosts)
-  if [[ ${#HOSTS_ARRAY[@]} -eq 0 ]]; then
-    warn "No host config directories detected. Using raw install only."
-    HOSTS_ARRAY=("raw")
-  fi
-elif [[ "$HOSTS" == "all" ]]; then
-  HOSTS_ARRAY=("claude-code" "copilot" "cursor" "opencode" "codex")
-elif [[ "$HOSTS" == "none" ]]; then
-  HOSTS_ARRAY=()
-else
-  IFS=',' read -ra HOSTS_ARRAY <<< "$HOSTS"
-fi
-
-# Validate per EIIS v1.1 §2.1 host enum.
-for _h in "${HOSTS_ARRAY[@]:-}"; do
-  case "$_h" in
-    claude-code|copilot|cursor|opencode|codex|raw|"") : ;;
-    *) echo "Invalid --hosts value: $_h" >&2; exit 2 ;;
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --target) TARGET="$2"; shift 2 ;;
+    --hosts) HOSTS="$2"; shift 2 ;;
+    --force) FORCE=true; shift ;;
+    --non-interactive) NON_INTERACTIVE=true; shift ;;
+    --dry-run) DRY_RUN=true; shift ;;
+    --manifest-only) MANIFEST_ONLY=true; shift ;;
+    --shared-dispatch|--no-shared-dispatch) shift ;;
+    --version) pkg_version; exit 0 ;;
+    -h|--help) usage; exit 0 ;;
+    *) printf 'Unknown option: %s\n' "$1" >&2; exit 2 ;;
   esac
 done
 
-hosts_include() { local h; for h in "${HOSTS_ARRAY[@]:-}"; do [[ "$h" == "$1" ]] && return 0; done; return 1; }
+jq empty "$PACKAGE_MANIFEST" >/dev/null
+NAME="$(pkg_name)"
+VERSION="$(pkg_version)"
+[ -n "$TARGET" ] || TARGET="./.eidolons/$NAME"
+MANIFEST_SHA="$(sha256_file "$PACKAGE_MANIFEST")"
+PREVIOUS_INSTALLED_AT=""
+if [ -f "$TARGET/install.receipt.json" ]; then
+  PREVIOUS_INSTALLED_AT="$(jq -r --arg name "$NAME" --arg version "$VERSION" --arg digest "$MANIFEST_SHA" '
+    if .package.name == $name and .package.version == $version and
+       .package.manifest_sha256 == $digest then .installed_at else empty end
+  ' "$TARGET/install.receipt.json" 2>/dev/null || true)"
+fi
 
-# --------------------------------------------------------------------------- #
-# Idempotency check
-# --------------------------------------------------------------------------- #
-EXISTING_MANIFEST="${TARGET}/install.manifest.json"
-if [[ -f "$EXISTING_MANIFEST" && "$FORCE" != "true" ]]; then
-  EXISTING_VER=$(grep -o '"version":"[^"]*"' "$EXISTING_MANIFEST" 2>/dev/null | head -1 | cut -d'"' -f4 || echo "unknown")
-  if [[ "$NON_INTERACTIVE" == "true" ]]; then
-    echo "Already installed v${EXISTING_VER} at ${TARGET}. Pass --force to overwrite." >&2
+if [ "$DRY_RUN" = true ]; then
+  printf 'install %s@%s -> %s (package only; hosts=%s)\n' "$NAME" "$VERSION" "$TARGET" "$HOSTS"
+  exit 0
+fi
+
+if [ -e "$TARGET" ] && [ "$FORCE" != true ]; then
+  if [ "$NON_INTERACTIVE" = true ]; then
+    printf 'Already installed at %s; pass --force.\n' "$TARGET" >&2
     exit 3
   fi
-  read -rp "[vigil] Already installed v${EXISTING_VER} at ${TARGET}. Overwrite? [y/N] " confirm
-  [[ "$confirm" =~ ^[Yy]$ ]] || { echo "Aborted."; exit 0; }
+  printf 'Already installed at %s; pass --force.\n' "$TARGET" >&2
+  exit 3
 fi
 
-# --------------------------------------------------------------------------- #
-# Announce
-# --------------------------------------------------------------------------- #
-log "Installing VIGIL v${EIDOLON_VERSION} → ${TARGET}"
-log "Mode: ${MODE}"
-log "Hosts: ${HOSTS_ARRAY[*]}"
-[[ "$DRY_RUN" == "true" ]]       && log "Dry-run (no files written)"
-[[ "$MANIFEST_ONLY" == "true" ]] && log "Manifest-only"
-
-# --------------------------------------------------------------------------- #
-# Directory creation
-# --------------------------------------------------------------------------- #
-FILES_WRITTEN=()
-FILES_WRITTEN_PATHS=()
-SKILLS_WRITTEN=()
-
-maybe_mkdir() {
-  do_action "mkdir -p $1" mkdir -p "$1"
-}
-
-if [[ "$MANIFEST_ONLY" != "true" ]]; then
-  maybe_mkdir "${TARGET}"
-  maybe_mkdir "${TARGET}/skills"
-  maybe_mkdir "${TARGET}/templates"
-  maybe_mkdir "${TARGET}/schemas"
-  maybe_mkdir "${TARGET}/schemas/ecl"
-  maybe_mkdir "${TARGET}/schemas/ecl/contracts"
-  cleanup_legacy_v1_2 "${TARGET}"
-fi
-
-# --------------------------------------------------------------------------- #
-# Copy methodology files
-# --------------------------------------------------------------------------- #
-copy_file() {
-  local src="$1" dst="$2" role="$3"
-  do_action "copy ${src} → ${dst}" cp "${SCRIPT_DIR}/${src}" "${dst}"
-  if [[ "$DRY_RUN" != "true" ]]; then
-    local chk; chk=$(sha256_file "${dst}")
-    FILES_WRITTEN+=("{\"path\":\"${dst}\",\"sha256\":\"${chk}\",\"role\":\"${role}\",\"mode\":\"created\"}")
-    FILES_WRITTEN_PATHS+=("${dst}")
-  fi
-}
-
-# wire_skill <skill_name>
-#
-# Dual-writes a skill file:
-#   - source-of-truth: ${TARGET}/skills/<skill_name>.md
-#   - vendor copy:     .claude/skills/${EIDOLON_SLUG}-<skill_name>/SKILL.md
-#
-# Source file resolved as: ${SCRIPT_DIR}/skills/<skill_name>.md
-#
-# Records both files in FILES_WRITTEN and a skills[] entry in SKILLS_WRITTEN
-# with role "skill" and matching SHA-256. Bash 3.2 compatible.
-wire_skill() {
-  local skill="$1"
-  local src="${SCRIPT_DIR}/skills/${skill}.md"
-  local dst_src="${TARGET}/skills/${skill}.md"
-  local dst_vendor=".claude/skills/${EIDOLON_SLUG}-${skill}/SKILL.md"
-
-  if [ ! -f "${src}" ]; then
-    echo "ERROR: skill source not found: ${src}" >&2
-    exit 3
-  fi
-
-  if [[ "$DRY_RUN" == "true" ]]; then
-    echo "  [dry-run] copy ${src} → ${dst_src}"
-    if printf '%s\n' "${HOSTS_ARRAY[@]:-}" | grep -q 'claude-code'; then
-      echo "  [dry-run] copy ${src} → ${dst_vendor}"
+mkdir -p "$TARGET"
+if [ "$MANIFEST_ONLY" != true ]; then
+  cp "$SCRIPT_DIR/PERSONA.md" "$TARGET/PERSONA.md"
+  cp "$SCRIPT_DIR/SPEC.md" "$TARGET/SPEC.md"
+  cp "$SCRIPT_DIR/EIIS_VERSION" "$TARGET/EIIS_VERSION"
+  cp "$PACKAGE_MANIFEST" "$TARGET/manifest.json"
+  for dir in skills hooks shared; do
+    if [ -d "$SCRIPT_DIR/$dir" ]; then
+      rm -rf "$TARGET/$dir"
+      cp -R "$SCRIPT_DIR/$dir" "$TARGET/$dir"
     fi
-    return
-  fi
-
-  mkdir -p "$(dirname "${dst_src}")"
-  cp "${src}" "${dst_src}"
-  local src_chk; src_chk=$(sha256_file "${dst_src}")
-  FILES_WRITTEN+=("{\"path\":\"${dst_src}\",\"sha256\":\"${src_chk}\",\"role\":\"skill\",\"mode\":\"created\"}")
-  FILES_WRITTEN_PATHS+=("${dst_src}")
-
-  if printf '%s\n' "${HOSTS_ARRAY[@]:-}" | grep -q 'claude-code'; then
-    mkdir -p "$(dirname "${dst_vendor}")"
-    cp "${src}" "${dst_vendor}"
-    local vendor_chk; vendor_chk=$(sha256_file "${dst_vendor}")
-    FILES_WRITTEN+=("{\"path\":\"${dst_vendor}\",\"sha256\":\"${vendor_chk}\",\"role\":\"skill\",\"mode\":\"created\"}")
-    FILES_WRITTEN_PATHS+=("${dst_vendor}")
-    SKILLS_WRITTEN+=("{\"name\":\"${skill}\",\"source_path\":\".eidolons/${EIDOLON_SLUG}/skills/${skill}.md\",\"source_sha256\":\"${src_chk}\",\"vendor_path\":\".claude/skills/${EIDOLON_SLUG}-${skill}/SKILL.md\",\"vendor_sha256\":\"${vendor_chk}\"}")
-  else
-    SKILLS_WRITTEN+=("{\"name\":\"${skill}\",\"source_path\":\".eidolons/${EIDOLON_SLUG}/skills/${skill}.md\",\"source_sha256\":\"${src_chk}\"}")
-  fi
-}
-
-if [[ "$MANIFEST_ONLY" != "true" ]]; then
-  copy_file "agent.md"    "${TARGET}/agent.md"    "agent-profile"
-  copy_file "SPEC.md"     "${TARGET}/SPEC.md"     "spec"
-  copy_file "ECL_VERSION" "${TARGET}/ECL_VERSION" "ecl-version"
-
-  for phase in verify isolate graph intervene learn verify-incoming esl-hop; do
-    wire_skill "${phase}"
   done
-
-  for tpl in root-cause-report verified-patch failure-signature escalation-brief; do
-    copy_file "templates/${tpl}.md" "${TARGET}/templates/${tpl}.md" "template"
-  done
-
-  for schema in reproduction intervention-log root-cause-report; do
-    copy_file "schemas/${schema}.v1.json" "${TARGET}/schemas/${schema}.v1.json" "other"
-  done
-
-  canonical_inventory_sweep "${TARGET}"
+  while IFS= read -r resource; do
+    [ -n "$resource" ] || continue
+    case "/$resource/" in */../*|*/./*) printf 'Unsafe package resource: %s\n' "$resource" >&2; exit 2 ;; esac
+    [ -e "$SCRIPT_DIR/$resource" ] || { printf 'Missing package resource: %s\n' "$resource" >&2; exit 2; }
+    mkdir -p "$(dirname "$TARGET/$resource")"
+    rm -rf "$TARGET/$resource"
+    cp -R "$SCRIPT_DIR/$resource" "$TARGET/$resource"
+  done < <(jq -r '.resources[]' "$PACKAGE_MANIFEST")
 fi
 
-# --------------------------------------------------------------------------- #
-# Shared dispatch block (opt-in marker-bounded section in root files)
-# --------------------------------------------------------------------------- #
-SHARED_BLOCK="## VIGIL — Forensic debugger (v${EIDOLON_VERSION})
-
-Entry:     \`${TARGET}/agent.md\`
-Full spec: \`${TARGET}/SPEC.md\`
-Cycle:     V (Verify) → I (Isolate) → G (Graph) → I (Intervene) → L (Learn)
-Authority: ${MODE}
-
-**P0 (non-negotiable):** reproduction gates attribution (≥2 deterministic runs or statistical CI ≥85%); dependency-graph ranking (never temporal order); ≥3 hypotheses before intervention; counterfactual-gated blame (minimal flip from fail→success); ≤5 intervention budget then escalate; flag-gated authority (read-only | sandbox | write — write never inferred); evidence-anchored findings with \`path:line\` + confidence tier; non-determinism declared, not masked."
-
-upsert_eidolon_block() {
-  local dst="$1" content="$2" role="$3"
-  local start="<!-- eidolon:${EIDOLON_NAME} start -->"
-  local end="<!-- eidolon:${EIDOLON_NAME} end -->"
-
-  if [[ "$DRY_RUN" == "true" ]]; then
-    local action="append"
-    [[ -f "$dst" ]] && grep -qF "$start" "$dst" 2>/dev/null && action="rewrite"
-    echo "  [dry-run] ${action} eidolon:${EIDOLON_NAME} block in ${dst}"
-    return
-  fi
-
-  mkdir -p "$(dirname "$dst")" 2>/dev/null || true
-  [[ -L "$dst" ]] && rm -f "$dst"
-
-  local content_file mode tmp
-  content_file="$(mktemp)"
-  printf '%s\n' "$content" > "$content_file"
-
-  if [[ -f "$dst" ]] && grep -qF "$start" "$dst" 2>/dev/null; then
-    mode="overwritten"
-    tmp="$(mktemp)"
-    awk -v start="$start" -v end="$end" -v cf="$content_file" '
-      BEGIN { in_block = 0 }
-      $0 == start {
-        print start
-        while ((getline line < cf) > 0) print line
-        close(cf)
-        in_block = 1
-        next
-      }
-      $0 == end {
-        print end
-        in_block = 0
-        next
-      }
-      !in_block { print }
-    ' "$dst" > "$tmp"
-    mv "$tmp" "$dst"
-  elif [[ -f "$dst" ]]; then
-    mode="appended"
-    {
-      printf '\n%s\n' "$start"
-      cat "$content_file"
-      printf '%s\n' "$end"
-    } >> "$dst"
-  else
-    mode="created"
-    {
-      printf '%s\n' "$start"
-      cat "$content_file"
-      printf '%s\n' "$end"
-    } > "$dst"
-  fi
-
-  rm -f "$content_file"
-  local chk; chk=$(sha256_file "$dst")
-  FILES_WRITTEN+=("{\"path\":\"${dst}\",\"sha256\":\"${chk}\",\"role\":\"${role}\",\"mode\":\"${mode}\"}")
-}
-
-if [[ "$MANIFEST_ONLY" != "true" && "$SHARED_DISPATCH" == "true" ]]; then
-  upsert_eidolon_block "AGENTS.md" "$SHARED_BLOCK" "dispatch"
-fi
-
-# EIIS v1.1 §4.1.0 — root AGENTS.md is co-owned by `copilot` and `codex`.
-# When `codex` is wired, write the marker block into root AGENTS.md
-# regardless of --shared-dispatch (Codex's primary instruction surface).
-if [[ "$MANIFEST_ONLY" != "true" && "$SHARED_DISPATCH" != "true" ]] && hosts_include "codex"; then
-  upsert_eidolon_block "AGENTS.md" "$SHARED_BLOCK" "dispatch"
-fi
-
-# --------------------------------------------------------------------------- #
-# Host wiring
-# --------------------------------------------------------------------------- #
-
-# ---- claude-code ---------------------------------------------------------- #
-if hosts_include "claude-code" && [[ "$MANIFEST_ONLY" != "true" ]]; then
-  log "Wiring: claude-code"
-
-  [[ "$SHARED_DISPATCH" == "true" ]] && upsert_eidolon_block "CLAUDE.md" "$SHARED_BLOCK" "dispatch"
-
-  do_action "mkdir -p .claude/agents" mkdir -p ".claude/agents"
-
-  AGENT_CONTENT="---
-name: vigil
-description: Forensic debugger for code failures resistant to normal repair. Use when a test fails in a non-obvious way, when APIVR-Δ has exhausted its Reflect loop, for heisenbugs, compound failures, or regressions of unclear origin. Runs the five-phase VIGIL pipeline (Verify → Isolate → Graph → Intervene → Learn), emits evidence-anchored root-cause attribution.
-model: opus
-tools: Read, Grep, Glob, Bash(git:*), Bash(make:*), Bash(bats:*), Bash(rspec:*), Bash(jest:*), Bash(pytest:*), Bash(go test:*), Bash(cargo:*), Bash(shasum:*), Bash(wc:*)
----
-
-You are VIGIL. Read these two files in order at session start:
-
-1. \`./.eidolons/vigil/agent.md\` — always-loaded P0 rules.
-2. \`./.eidolons/vigil/SPEC.md\` — deep on-demand methodology spec.
-
-Skills live at \`./.eidolons/vigil/skills/<skill>.md\` (load on demand)."
-
-  if [[ "$DRY_RUN" != "true" ]]; then
-    printf "%s\n" "$AGENT_CONTENT" > ".claude/agents/vigil.md"
-    chk=$(sha256_file ".claude/agents/vigil.md")
-    FILES_WRITTEN+=("{\"path\":\".claude/agents/vigil.md\",\"sha256\":\"${chk}\",\"role\":\"dispatch\",\"mode\":\"created\"}")
-  else
-    echo "  [dry-run] created .claude/agents/vigil.md"
-  fi
-fi
-
-# ---- copilot -------------------------------------------------------------- #
-if hosts_include "copilot" && [[ "$MANIFEST_ONLY" != "true" ]]; then
-  log "Wiring: copilot"
-  [[ "$SHARED_DISPATCH" == "true" ]] && \
-    upsert_eidolon_block ".github/copilot-instructions.md" "$SHARED_BLOCK" "dispatch"
-fi
-
-# ---- cursor --------------------------------------------------------------- #
-if hosts_include "cursor" && [[ "$MANIFEST_ONLY" != "true" ]]; then
-  log "Wiring: cursor"
-  do_action "mkdir -p .cursor/rules" mkdir -p ".cursor/rules"
-  CURSOR_RULE=".cursor/rules/vigil.mdc"
-  if [[ ! -f "$CURSOR_RULE" || "$FORCE" == "true" ]]; then
-    if [[ "$DRY_RUN" == "true" ]]; then
-      echo "  [dry-run] write ${CURSOR_RULE}"
-    else
-      cat > "$CURSOR_RULE" <<EOF
----
-description: "VIGIL — forensic debugger for code failures resistant to normal repair. Runs V→I→G→I→L."
-globs: "**/*"
-alwaysApply: false
----
-
-See ${TARGET}/agent.md for the always-loaded entry and ${TARGET}/SPEC.md
-for the authoritative specification. Authority: ${MODE}.
-EOF
-      chk=$(sha256_file "$CURSOR_RULE")
-      FILES_WRITTEN+=("{\"path\":\"${CURSOR_RULE}\",\"sha256\":\"${chk}\",\"role\":\"dispatch\",\"mode\":\"created\"}")
-    fi
-  else
-    log "  skip ${CURSOR_RULE} (exists — pass --force to overwrite)"
-  fi
-fi
-
-# ---- opencode ------------------------------------------------------------- #
-if hosts_include "opencode" && [[ "$MANIFEST_ONLY" != "true" ]]; then
-  log "Wiring: opencode"
-  do_action "mkdir -p .opencode/agents" mkdir -p ".opencode/agents"
-  OC_AGENT=".opencode/agents/vigil.md"
-  if [[ ! -f "$OC_AGENT" || "$FORCE" == "true" ]]; then
-    if [[ "$DRY_RUN" == "true" ]]; then
-      echo "  [dry-run] write ${OC_AGENT}"
-    else
-      cat > "$OC_AGENT" <<EOF
----
-mode: primary
-description: "VIGIL v${EIDOLON_VERSION} — forensic debugger, V→I→G→I→L, authority ${MODE}"
----
-
-You are the VIGIL forensic debugger. Read these two files in order at session start:
-
-1. \`${TARGET}/agent.md\` — always-loaded P0 rules.
-2. \`${TARGET}/SPEC.md\` — deep on-demand methodology spec.
-
-Phase skills: \`${TARGET}/skills/<phase>.md\` — load per phase.
-Authority: ${MODE}.
-EOF
-      chk=$(sha256_file "$OC_AGENT")
-      FILES_WRITTEN+=("{\"path\":\"${OC_AGENT}\",\"sha256\":\"${chk}\",\"role\":\"dispatch\",\"mode\":\"created\"}")
-    fi
-  else
-    log "  skip ${OC_AGENT} (exists — pass --force to overwrite)"
-  fi
-fi
-
-# ---- codex (EIIS v1.1 §4.5) ---------------------------------------------- #
-# Per §4.5.1: write exactly one Markdown file at .codex/agents/<name>.md.
-# Per §4.5.2: required frontmatter `name` (slug) + `description`; optional
-# `tools` and `model`. Source: https://developers.openai.com/codex/subagents
-if hosts_include "codex" && [[ "$MANIFEST_ONLY" != "true" ]]; then
-  log "Wiring: codex"
-  do_action "mkdir -p .codex/agents" mkdir -p ".codex/agents"
-  CODEX_AGENT=".codex/agents/vigil.md"
-  CODEX_CONTENT="---
-name: vigil
-description: Forensic debugger for code failures resistant to normal repair. Use when a test fails in a non-obvious way, when APIVR-Δ has exhausted its Reflect loop, for heisenbugs, compound failures, or regressions of unclear origin. Runs the five-phase VIGIL pipeline (Verify → Isolate → Graph → Intervene → Learn), emits evidence-anchored root-cause attribution.
----
-
-# VIGIL — Forensic Debugger Codex subagent
-
-You execute the VIGIL methodology: **V**erify → **I**solate → **G**raph →
-**I**ntervene → **L**earn. You attribute root causes under evidence
-discipline. You do NOT plan, implement, or chronicle — you decide what
-went wrong.
-
-Read these two files in order at session start:
-
-1. \`${TARGET}/agent.md\` — always-loaded P0 rules.
-2. \`${TARGET}/SPEC.md\` — deep on-demand methodology spec.
-
-Phase skills under \`${TARGET}/skills/<phase>.md\` load per phase.
-
-Authority: **${MODE}**."
-
-  if [[ ! -f "$CODEX_AGENT" || "$FORCE" == "true" ]]; then
-    if [[ "$DRY_RUN" == "true" ]]; then
-      echo "  [dry-run] write ${CODEX_AGENT}"
-    else
-      printf "%s\n" "$CODEX_CONTENT" > "$CODEX_AGENT"
-      chk=$(sha256_file "$CODEX_AGENT")
-      FILES_WRITTEN+=("{\"path\":\"${CODEX_AGENT}\",\"sha256\":\"${chk}\",\"role\":\"dispatch\",\"mode\":\"created\"}")
-    fi
-  else
-    log "  skip ${CODEX_AGENT} (exists — pass --force to overwrite)"
-  fi
-fi
-
-# --------------------------------------------------------------------------- #
-# Per-project config and memory ledger (VIGIL-specific)
-# --------------------------------------------------------------------------- #
-CONFIG_DIR="$(dirname "$TARGET")/.vigil"
-if [[ "$MANIFEST_ONLY" != "true" && ! -d "$CONFIG_DIR" ]]; then
-  if [[ "$DRY_RUN" == "true" ]]; then
-    echo "  [dry-run] generate ${CONFIG_DIR}/config.yml"
-  else
-    mkdir -p "$CONFIG_DIR"
-    cat > "$CONFIG_DIR/config.yml" <<EOF
-# VIGIL per-project configuration
-# Generated by installer (VIGIL v${EIDOLON_VERSION}).
-
-authority:
-  default_mode: $MODE
-  allow_write: $([ "$MODE" = "write" ] && echo "true" || echo "false")
-
-sandbox:
-  # Choose adapter based on your project stack:
-  #   docker | podman | language_native | firejail | bubblewrap
-  adapter: language_native
-  timeout_s: 300
-  resource_limits:
-    memory_mb: 2048
-    cpus: 2
-
-memory:
-  path: memories/vigil-failures.yaml
-  signature_cap: 50
-  consolidation_strategy: recency_weighted
-
-trace_source:
-  type: none                             # none | otel | otlp_file | structured_log
-EOF
-    log "  generated: ${CONFIG_DIR}/config.yml"
-  fi
-fi
-
-MEM_DIR="$(dirname "$TARGET")/memories"
-if [[ "$MANIFEST_ONLY" != "true" && ! -e "$MEM_DIR/vigil-failures.yaml" ]]; then
-  if [[ "$DRY_RUN" == "true" ]]; then
-    echo "  [dry-run] generate ${MEM_DIR}/vigil-failures.yaml"
-  else
-    mkdir -p "$MEM_DIR"
-    cat > "$MEM_DIR/vigil-failures.yaml" <<EOF
-# VIGIL failure signature ledger
-# Managed automatically by VIGIL Phase L
-# Soft cap: 50 entries — older single-occurrence entries archive to vigil-failures.archive.yaml
-
-version: "1.0"
-methodology: VIGIL
-signatures: []
-EOF
-    log "  generated: ${MEM_DIR}/vigil-failures.yaml"
-  fi
-fi
-
-# --------------------------------------------------------------------------- #
-# Token measurement
-# --------------------------------------------------------------------------- #
-AGENT_MD_PATH="${TARGET}/agent.md"
-if [[ "$DRY_RUN" != "true" && -f "$AGENT_MD_PATH" ]]; then
-  WORD_COUNT=$(wc -w < "$AGENT_MD_PATH")
-else
-  WORD_COUNT=$(wc -w < "${SCRIPT_DIR}/agent.md")
-fi
-AGENT_TOKENS=$(awk "BEGIN {printf \"%d\", ${WORD_COUNT}/0.75}")
-
-if [[ "$AGENT_TOKENS" -gt 1000 ]]; then
-  warn "agent.md exceeds 1000-token budget (estimated ${AGENT_TOKENS} tokens)."
-  if [[ "$NON_INTERACTIVE" == "true" ]]; then
-    echo "Error: agent.md token budget exceeded in --non-interactive mode." >&2
-    exit 4
-  fi
-fi
-
-# --------------------------------------------------------------------------- #
-# Write install.manifest.json
-# --------------------------------------------------------------------------- #
-INSTALLED_AT="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-HOSTS_JSON="$(printf '"%s",' "${HOSTS_ARRAY[@]}" | sed 's/,$//')"
-
-FILES_JSON=""
-if [[ ${#FILES_WRITTEN[@]} -gt 0 ]]; then
-  FILES_JSON="$(printf '%s,' "${FILES_WRITTEN[@]}" | sed 's/,$//')"
-fi
-
-SKILLS_JSON=""
-if [[ ${#SKILLS_WRITTEN[@]} -gt 0 ]]; then
-  SKILLS_JSON="$(printf '%s,' "${SKILLS_WRITTEN[@]}" | sed 's/,$//')"
-fi
-
-MANIFEST_PATH="${TARGET}/install.manifest.json"
-if [[ "$DRY_RUN" != "true" ]]; then
-  mkdir -p "${TARGET}"
-  cat > "${MANIFEST_PATH}" <<MANIFEST_EOF
+TREE_SHA="$(tree_sha256 "$TARGET")"
+INSTALLED_AT="${PREVIOUS_INSTALLED_AT:-$(date -u +'%Y-%m-%dT%H:%M:%SZ')}"
+cat > "$TARGET/install.receipt.json" <<EOF
 {
-  "eidolon": "${EIDOLON_NAME}",
-  "version": "${EIDOLON_VERSION}",
-  "methodology": "${METHODOLOGY}",
-  "eiis_version": "1.4",
-  "canonical_inventory_strict": true,
-  "installed_at": "${INSTALLED_AT}",
-  "target": "${TARGET}",
-  "spec_file": ".eidolons/${EIDOLON_SLUG}/SPEC.md",
-  "hosts_wired": [${HOSTS_JSON}],
-  "files_written": [${FILES_JSON}],
-  "skills": [${SKILLS_JSON}],
-  "handoffs_declared": {
-    "upstream": [],
-    "downstream": ["apivr", "spectra", "idg", "forge"]
-  },
-  "token_budget": {
-    "entry": ${AGENT_TOKENS},
-    "working_set_target": 3500
-  },
-  "security": {
-    "reads_repo": true,
-    "reads_network": false,
-    "writes_repo": $([ "$MODE" = "write" ] && echo "true" || echo "false"),
-    "persists": [".vigil/config.yml", "memories/vigil-failures.yaml"]
-  },
-  "comm": {
-    "envelope_version": "2.0",
-    "emits": ["root-cause-report", "escalation-brief"],
-    "consumes": ["repair-failed-report"]
-  }
+  "schema_version": "1.0",
+  "eiis_version": "3.0.0",
+  "package": {"name":"$NAME","version":"$VERSION","manifest_sha256":"$MANIFEST_SHA"},
+  "installed_at": "$INSTALLED_AT",
+  "target": "$TARGET",
+  "tree_sha256": "$TREE_SHA",
+  "adapters": []
 }
-MANIFEST_EOF
-  log "Manifest: ${MANIFEST_PATH}"
-fi
-
-# --------------------------------------------------------------------------- #
-# Success banner
-# --------------------------------------------------------------------------- #
-echo ""
-echo "✓ VIGIL v${EIDOLON_VERSION} installed → ${TARGET}"
-echo "✓ agent.md: ${AGENT_TOKENS} tokens (budget: ≤1000)"
-echo "✓ Hosts wired: ${HOSTS_ARRAY[*]}"
-echo "✓ Authority mode: ${MODE}"
-echo ""
-echo "Smoke test — paste this into your AI host:"
-echo "─────────────────────────────────────────────────────────────────────────"
-echo "VIGIL, a flaky test fails ~30% of runs with TypeError: Cannot read"
-echo "property 'id' of undefined. Other tests in the same file pass. Please"
-echo "attribute root cause via the V→I→G→I→L cycle."
-echo "─────────────────────────────────────────────────────────────────────────"
-echo ""
-echo "Expected: VIGIL emits reproduction.md (statistical mode after 2 divergent"
-echo "deterministic attempts), fault-surface.md, an IDG distinguishing symptom"
-echo "from candidates, counterfactual interventions (≤5), and a root-cause-report.md"
-echo "with confidence tier and reversal conditions."
-echo ""
-echo "Per-project config: ${CONFIG_DIR}/config.yml"
-echo "Memory ledger:      ${MEM_DIR}/vigil-failures.yaml"
+EOF
+printf '%s@%s installed -> %s\n' "$NAME" "$VERSION" "$TARGET"

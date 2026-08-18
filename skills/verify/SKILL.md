@@ -13,7 +13,7 @@ metadata:
 
 Load at the start of every VIGIL mission. Unload when `reproduction.md` is schema-valid and `DETERMINISM_VERDICT ≠ intermittent`.
 
-> **Memory pre-flight:** `recall` MUST have fired in Phase V (see `agent.md`
+> **Memory pre-flight:** `recall` MUST have fired in Phase V (see `PERSONA.md`
 > §"Memory pre-flight") before any reproduction work begins. If it hasn't —
 > e.g. this skill was loaded directly — call it now:
 >
