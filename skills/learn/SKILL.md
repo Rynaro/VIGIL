@@ -257,7 +257,7 @@ When the handoff routes to multiple recipients (e.g. SPEC_DEFECT → SPECTRA + I
    - `vigil-to-apivr`: `"high"`
    - `vigil-to-spectra`: `"high"`
    - `vigil-to-idg`: `"standard"`
-6. `ise.assertion_grade` (ECL v2.0 §6.5) is set **once per report, identically on every fan-out copy** — it describes how the payload was produced, not who receives it. See `skills/intervene.md` § ISE Grade on the Root-Cause Report for the `validated` / `self-attested` rule. `ise.receiver_authorization` is `{auto_route: true, auto_merge: false, auto_deploy: false}` on every envelope.
+6. `ise.assertion_grade` (ECL v2.0 §6.5) is set **once per report, identically on every fan-out copy** — it describes how the payload was produced, not who receives it. See `skills/intervene/SKILL.md` § ISE Grade on the Root-Cause Report for the `validated` / `self-attested` rule. `ise.receiver_authorization` is `{auto_route: true, auto_merge: false, auto_deploy: false}` on every envelope.
 
 Fill all fields from `templates/root-cause-report.envelope.json`. The `objective` field MUST be ≤240 characters. The `context_delta.summary` MUST be ≤200 tokens (heuristic: ≤800 chars using `chars/4`). If `tokens_used > 4000`, warn (do not abort).
 

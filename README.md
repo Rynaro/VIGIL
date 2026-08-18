@@ -48,11 +48,11 @@ Per-project config is generated at `.vigil/config.yml`.
 
 | Host | Entry |
 |------|-------|
-| **Claude Code** | Add `@agents/vigil/agent.md` to `CLAUDE.md` or use as subagent |
-| **Cursor** | Create `.cursor/rules/vigil.mdc` referencing `@agents/vigil/agent.md` |
+| **Claude Code** | Add `@agents/vigil/PERSONA.md` to `CLAUDE.md` or use as subagent |
+| **Cursor** | Create `.cursor/rules/vigil.mdc` referencing `@agents/vigil/PERSONA.md` |
 | **GitHub Copilot** | Extend `.github/copilot-instructions.md` |
 | **OpenCode** | Create `.opencode/agents/vigil.md` |
-| **Raw API** | Load `agent.md` as system prompt |
+| **Raw API** | Load `PERSONA.md` as system prompt |
 
 See `hosts/` for detailed per-host wiring.
 
@@ -62,7 +62,7 @@ See `hosts/` for detailed per-host wiring.
 User: APIVR-Δ just escalated after 3 attempts at fixing the ballot token
       nil issue. Can VIGIL take over?
 
-VIGIL: [loads agents/vigil/agent.md]
+VIGIL: [loads agents/vigil/PERSONA.md]
        Mode: sandbox (per .vigil/config.yml)
        Phase V — Verify: attempting deterministic reproduction from
        the repair-failed-report.md...
@@ -73,7 +73,7 @@ VIGIL: [loads agents/vigil/agent.md]
 
 ```
 vigil/
-├── agent.md                      # Always-loaded entry (~900 tokens)
+├── PERSONA.md                      # Always-loaded entry (~900 tokens)
 ├── SPEC.md                       # Authoritative specification
 ├── AGENTS.md                     # Open-standard rule set
 ├── CLAUDE.md                     # Claude Code entry point
@@ -222,3 +222,17 @@ Apache 2.0. See [LICENSE](LICENSE).
 ---
 
 *VIGIL — Verify · Isolate · Graph · Intervene · Learn*
+
+<!-- eiis-v3-package:start -->
+## EIIS v3 package
+
+This repository has the same self-contained package shape as every roster Eidolon:
+
+- `PERSONA.md` — bounded identity, triggers, authority, refusals, and handoffs.
+- `SPEC.md` — the authoritative methodology.
+- `skills/<methodology>/SKILL.md` — unique skill discovery entrypoints.
+- `manifest.json` — immutable package metadata and resource inventory.
+- `install.sh` — package-only installer; the nexus owns vendor adapters.
+
+See [INSTALL.md](INSTALL.md) for nexus and standalone installation.
+<!-- eiis-v3-package:end -->

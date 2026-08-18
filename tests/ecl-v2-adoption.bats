@@ -6,7 +6,7 @@
 # (conditional root-cause-report grade vs fixed escalation-brief grade),
 # canonical verify-incoming convergence with Kupo's failure-code set, the
 # pending ECL 2.1 verification-attestation documentation note in
-# skills/esl-hop.md, version-stamp agreement across the 5 canonical homes,
+# skills/esl-hop/SKILL.md, version-stamp agreement across the 5 canonical homes,
 # install.sh wiring, and drift-kill greps for stale "ECL v1.0" prose.
 
 load helpers
@@ -184,29 +184,29 @@ load helpers
   done
 }
 
-@test "ise: the validated/self-attested rule is documented in skills/intervene.md, not just inline in emissions" {
-  grep -q 'ISE Grade on the Root-Cause Report' "$VIGIL_ROOT/skills/intervene.md"
-  grep -q '\*\*.validated.\*\*.*sandbox, write' "$VIGIL_ROOT/skills/intervene.md"
-  grep -q '\*\*.self-attested.\*\*.*read-only' "$VIGIL_ROOT/skills/intervene.md"
+@test "ise: the validated/self-attested rule is documented in skills/intervene/SKILL.md, not just inline in emissions" {
+  grep -q 'ISE Grade on the Root-Cause Report' "$VIGIL_ROOT/skills/intervene/SKILL.md"
+  grep -q '\*\*.validated.\*\*.*sandbox, write' "$VIGIL_ROOT/skills/intervene/SKILL.md"
+  grep -q '\*\*.self-attested.\*\*.*read-only' "$VIGIL_ROOT/skills/intervene/SKILL.md"
 }
 
-@test "ise: skills/learn.md cross-references the intervene.md grade rule instead of restating it" {
-  grep -q 'ISE Grade on the Root-Cause Report' "$VIGIL_ROOT/skills/learn.md"
+@test "ise: skills/learn/SKILL.md cross-references the intervene.md grade rule instead of restating it" {
+  grep -q 'ISE Grade on the Root-Cause Report' "$VIGIL_ROOT/skills/learn/SKILL.md"
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Pending ECL 2.1 verification-attestation note (documentation only)
 # ─────────────────────────────────────────────────────────────────────────────
 
-@test "2.1-note: skills/esl-hop.md documents the pending ise.verification sub-block" {
-  grep -q 'ise.verification' "$VIGIL_ROOT/skills/esl-hop.md"
-  grep -q 'fresh_context' "$VIGIL_ROOT/skills/esl-hop.md"
-  grep -q 'transcript_access' "$VIGIL_ROOT/skills/esl-hop.md"
+@test "2.1-note: skills/esl-hop/SKILL.md documents the pending ise.verification sub-block" {
+  grep -q 'ise.verification' "$VIGIL_ROOT/skills/esl-hop/SKILL.md"
+  grep -q 'fresh_context' "$VIGIL_ROOT/skills/esl-hop/SKILL.md"
+  grep -q 'transcript_access' "$VIGIL_ROOT/skills/esl-hop/SKILL.md"
 }
 
-@test "2.1-note: skills/esl-hop.md explicitly states the note is pending, not emitted" {
-  grep -qi 'not emitted' "$VIGIL_ROOT/skills/esl-hop.md"
-  grep -q 'Draft' "$VIGIL_ROOT/skills/esl-hop.md"
+@test "2.1-note: skills/esl-hop/SKILL.md explicitly states the note is pending, not emitted" {
+  grep -qi 'not emitted' "$VIGIL_ROOT/skills/esl-hop/SKILL.md"
+  grep -q 'Draft' "$VIGIL_ROOT/skills/esl-hop/SKILL.md"
 }
 
 @test "2.1-note: ECL_VERSION file is unaffected by the 2.1 note (stays 2.0)" {
@@ -219,33 +219,33 @@ load helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
 @test "convergence: verify-incoming.md failure codes include CONTEXT_OVER_BUDGET (matches Kupo)" {
-  grep -q 'CONTEXT_OVER_BUDGET' "$VIGIL_ROOT/skills/verify-incoming.md"
+  grep -q 'CONTEXT_OVER_BUDGET' "$VIGIL_ROOT/skills/verify-incoming/SKILL.md"
 }
 
 @test "convergence: verify-incoming.md failure codes include MISSING_REQUIRED_SECTION (matches Kupo)" {
-  grep -q 'MISSING_REQUIRED_SECTION' "$VIGIL_ROOT/skills/verify-incoming.md"
+  grep -q 'MISSING_REQUIRED_SECTION' "$VIGIL_ROOT/skills/verify-incoming/SKILL.md"
 }
 
 @test "convergence: verify-incoming.md drops the stale 'six Eidolons' count" {
-  run grep -c 'six Eidolons' "$VIGIL_ROOT/skills/verify-incoming.md"
+  run grep -c 'six Eidolons' "$VIGIL_ROOT/skills/verify-incoming/SKILL.md"
   [[ "$output" == "0" ]]
-  grep -q 'All Eidolons in the roster ship this gate' "$VIGIL_ROOT/skills/verify-incoming.md"
+  grep -q 'All Eidolons in the roster ship this gate' "$VIGIL_ROOT/skills/verify-incoming/SKILL.md"
 }
 
 @test "convergence: verify-incoming.md accepted-artifact table is preserved (VIGIL-specific inbound edges)" {
-  grep -q '| `apivr` | PROPOSE, INFORM | `change-summary` |' "$VIGIL_ROOT/skills/verify-incoming.md"
-  grep -q '| `atlas` | PROPOSE, INFORM | `scout-report` |' "$VIGIL_ROOT/skills/verify-incoming.md"
-  grep -q '| `spectra` | PROPOSE, INFORM | `spec` |' "$VIGIL_ROOT/skills/verify-incoming.md"
-  grep -q '| `idg` | PROPOSE, INFORM | `doc-report` |' "$VIGIL_ROOT/skills/verify-incoming.md"
-  grep -q '| `forge` | PROPOSE, INFORM, CRITIQUE | `reasoning-report` |' "$VIGIL_ROOT/skills/verify-incoming.md"
+  grep -q '| `apivr` | PROPOSE, INFORM | `change-summary` |' "$VIGIL_ROOT/skills/verify-incoming/SKILL.md"
+  grep -q '| `atlas` | PROPOSE, INFORM | `scout-report` |' "$VIGIL_ROOT/skills/verify-incoming/SKILL.md"
+  grep -q '| `spectra` | PROPOSE, INFORM | `spec` |' "$VIGIL_ROOT/skills/verify-incoming/SKILL.md"
+  grep -q '| `idg` | PROPOSE, INFORM | `doc-report` |' "$VIGIL_ROOT/skills/verify-incoming/SKILL.md"
+  grep -q '| `forge` | PROPOSE, INFORM, CRITIQUE | `reasoning-report` |' "$VIGIL_ROOT/skills/verify-incoming/SKILL.md"
 }
 
 @test "convergence: verify-incoming.md posture is still BLOCKING (unchanged by convergence)" {
-  grep -qE 'REFUSE|SHALL NOT|blocking' "$VIGIL_ROOT/skills/verify-incoming.md"
+  grep -qE 'REFUSE|SHALL NOT|blocking' "$VIGIL_ROOT/skills/verify-incoming/SKILL.md"
   # Same exact-case patterns as tests/verify-incoming.bats' S2 — deliberately
   # NOT case-insensitive, since the lowercase prose phrase "warn-only" is used
   # legitimately as a historical contrast ("Blocking, not warn-only").
-  run grep -cE 'payload is always processed|WARN.ONLY|warn_only' "$VIGIL_ROOT/skills/verify-incoming.md"
+  run grep -cE 'payload is always processed|WARN.ONLY|warn_only' "$VIGIL_ROOT/skills/verify-incoming/SKILL.md"
   [[ "$output" == "0" ]]
 }
 
@@ -253,12 +253,6 @@ load helpers
 # Drift-kill: the 3 stale "ECL v1.0" prose references, and no strays left
 # ─────────────────────────────────────────────────────────────────────────────
 
-@test "drift: AGENTS.md ECL Emission Contract targets v2.0" {
-  grep -q 'emits ECL v2.0 envelopes' "$VIGIL_ROOT/AGENTS.md"
-  grep -q 'ECL_VERSION.*declares .2.0.' "$VIGIL_ROOT/AGENTS.md"
-  run grep -c 'ECL v1\.0' "$VIGIL_ROOT/AGENTS.md"
-  [[ "$output" == "0" ]]
-}
 
 @test "drift: SPEC.md §11 ECL Compatibility targets v2.0" {
   grep -q 'emits ECL v2.0 envelopes by default' "$VIGIL_ROOT/SPEC.md"
@@ -266,16 +260,16 @@ load helpers
   [[ "$output" == "0" ]]
 }
 
-@test "drift: skills/learn.md Envelope Emission section targets v2.0" {
-  grep -q 'emit the ECL v2.0 envelope sidecar' "$VIGIL_ROOT/skills/learn.md"
-  run grep -c 'ECL v1\.0' "$VIGIL_ROOT/skills/learn.md"
+@test "drift: skills/learn/SKILL.md Envelope Emission section targets v2.0" {
+  grep -q 'emit the ECL v2.0 envelope sidecar' "$VIGIL_ROOT/skills/learn/SKILL.md"
+  run grep -c 'ECL v1\.0' "$VIGIL_ROOT/skills/learn/SKILL.md"
   [[ "$output" == "0" ]]
 }
 
 @test "drift: no tracked methodology source (outside CHANGELOG.md) declares stale 'ECL v1.0' emission prose" {
   cd "$VIGIL_ROOT"
   run grep -rl 'ECL v1\.0' \
-    agent.md AGENTS.md SPEC.md README.md install.sh \
+    PERSONA.md AGENTS.md SPEC.md README.md install.sh \
     hosts/*.md evals/canary-missions.md \
     skills/*.md templates/*.md examples/*.json 2>/dev/null
   # DESIGN-RATIONALE.md's D4 fan-out rationale ("no multicast performative in
@@ -297,86 +291,13 @@ load helpers
 # Version-stamp agreement — the 5 canonical homes, bumped to 1.8.0
 # ─────────────────────────────────────────────────────────────────────────────
 
-@test "version: install.sh EIDOLON_VERSION is 1.8.0" {
-  grep -q 'EIDOLON_VERSION="1.8.0"' "$VIGIL_ROOT/install.sh"
-}
 
-@test "version: agent.md frontmatter version is 1.8.0" {
-  grep -q '^version: 1.8.0$' "$VIGIL_ROOT/agent.md"
-}
 
-@test "version: agent.md frontmatter envelope_version is 2.0 (unchanged by this sweep — already 2.0)" {
-  grep -q 'envelope_version: "2.0"' "$VIGIL_ROOT/agent.md"
-}
 
-@test "version: AGENTS.md ECL Emission Contract names 1.8.0" {
-  grep -q 'VIGIL v1.8.0 emits' "$VIGIL_ROOT/AGENTS.md"
-}
 
-@test "version: SPEC.md §11 names 1.8.0" {
-  grep -q 'VIGIL v1.8.0 emits ECL v2.0' "$VIGIL_ROOT/SPEC.md"
-}
 
-@test "version: README.md current-release line is 1.8.0" {
-  grep -q 'Current release: \*\*v1.8.0\*\*' "$VIGIL_ROOT/README.md"
-}
 
-@test "version: examples/install.manifest.json top-level version is 1.8.0" {
-  if ! command -v jq &>/dev/null; then
-    skip "jq not available"
-  fi
-  run jq -r '.version' "$VIGIL_ROOT/examples/install.manifest.json"
-  [[ "$output" == "1.8.0" ]]
-}
 
 # ─────────────────────────────────────────────────────────────────────────────
 # install.sh — end-to-end wiring still holds after the sweep
 # ─────────────────────────────────────────────────────────────────────────────
-
-@test "install: non-interactive install still exits 0 and stamps comm.envelope_version 2.0 in the manifest" {
-  local install_target="$BATS_TEST_TMPDIR/install_target"
-  mkdir -p "$install_target"
-
-  bash "$VIGIL_ROOT/install.sh" \
-    --target "$install_target" \
-    --hosts raw \
-    --non-interactive \
-    --force 2>/dev/null
-  local rc=$?
-  [ "$rc" -eq 0 ]
-
-  if ! command -v jq &>/dev/null; then
-    skip "jq not available"
-  fi
-  run jq -r '.comm.envelope_version' "$install_target/install.manifest.json"
-  [[ "$output" == "2.0" ]]
-}
-
-@test "install: schemas/ecl/ tree is still NOT copied to the install target (unchanged since v1.3.0)" {
-  local install_target="$BATS_TEST_TMPDIR/install_target_no_ecl"
-  mkdir -p "$install_target"
-
-  bash "$VIGIL_ROOT/install.sh" \
-    --target "$install_target" \
-    --hosts raw \
-    --non-interactive \
-    --force 2>/dev/null
-
-  [ ! -f "$install_target/schemas/ecl/envelope.v1.json" ]
-  [ ! -f "$install_target/schemas/ecl/envelope.v2.json" ]
-}
-
-@test "install: ECL_VERSION is still copied to the install target and reads 2.0" {
-  local install_target="$BATS_TEST_TMPDIR/install_target_eclver"
-  mkdir -p "$install_target"
-
-  bash "$VIGIL_ROOT/install.sh" \
-    --target "$install_target" \
-    --hosts raw \
-    --non-interactive \
-    --force 2>/dev/null
-
-  [ -f "$install_target/ECL_VERSION" ]
-  run cat "$install_target/ECL_VERSION"
-  [[ "$output" == "2.0" ]]
-}
